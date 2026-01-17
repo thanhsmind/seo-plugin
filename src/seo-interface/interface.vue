@@ -5,19 +5,17 @@ import { formatTitle } from '@directus/format-title';
 
 import { set } from 'lodash-es';
 import { TabsContent, TabsIndicator, TabsList, TabsRoot, TabsTrigger } from 'reka-ui';
-import { computed, toRefs } from 'vue';
+import { computed, defineEmits, defineProps, toRefs } from 'vue';
 import OgImagePreview from '../shared/components/OgImagePreview.vue';
 import SearchPreview from '../shared/components/SearchPreview.vue';
 
 import Analysis from './analysis/components/Analysis.vue';
 import FocusKeyphrase from './components/FocusKeyphrase.vue';
-import SchemaEditor from './components/schema/SchemaEditor.vue';
 
 import MetaDescriptionField from './components/MetaDescriptionField.vue';
 import OgImage from './components/OgImage.vue';
 import TitleField from './components/TitleField.vue';
 import { searchControls, sitemapFields } from './fields';
-import { t } from './locales';
 
 interface Props extends SeoInterfaceOptions {
 	collection: string;
@@ -107,11 +105,10 @@ const additionalFields = computed(() => {
 const showAdvancedTab = computed(() => props.showSitemap || props.showSearchControls);
 const showCustomFieldsTab = computed(() => additionalFields.value?.length > 0);
 const showAnalysisTab = computed(() => value.value && props.showFocusKeyphrase);
-const showSchemaTab = computed(() => props.showSchema);
 
 const showTabsUi = computed(() => {
 	// Show tabs UI if any of the optional tabs are rendered
-	return showAdvancedTab.value || showCustomFieldsTab.value || showAnalysisTab.value || showSchemaTab.value;
+	return showAdvancedTab.value || showCustomFieldsTab.value || showAnalysisTab.value;
 });
 </script>
 
@@ -122,19 +119,16 @@ const showTabsUi = computed(() => {
 				<div class="indicator-bar" />
 			</TabsIndicator>
 			<TabsTrigger class="tab-trigger" value="metadata">
-				<span>{{ t('tabs.basic') }}</span>
+				<span>Basic</span>
 			</TabsTrigger>
 			<TabsTrigger v-if="showAdvancedTab" class="tab-trigger" value="advanced-settings">
-				<span>{{ t('tabs.advanced') }}</span>
+				<span>Advanced</span>
 			</TabsTrigger>
 			<TabsTrigger v-if="showCustomFieldsTab" class="tab-trigger" value="custom-fields">
-				<span>{{ t('tabs.customFields') }}</span>
+				<span>Custom Fields</span>
 			</TabsTrigger>
 			<TabsTrigger v-if="showAnalysisTab" class="tab-trigger" value="analysis">
-				<span>{{ t('tabs.keyphrase') }}</span>
-			</TabsTrigger>
-			<TabsTrigger v-if="showSchemaTab" class="tab-trigger" value="schema">
-				<span>{{ t('tabs.schema') }}</span>
+				<span>Keyphrase</span>
 			</TabsTrigger>
 		</TabsList>
 
@@ -189,8 +183,8 @@ const showTabsUi = computed(() => {
 			<!-- Sitemap Fields -->
 			<div v-if="props.showSitemap" class="field">
 				<label class="label field-label type-label">
-					{{ t('sitemap.title') }}
-					<v-icon v-tooltip="t('sitemap.tooltip')" name="info" small class="info-icon" />
+					Sitemap Settings
+					<v-icon v-tooltip="'Control how search engines crawl and index your site'" name="info" small class="info-icon" />
 				</label>
 				<div class="form-grid">
 					<div v-for="sitemapField in sitemapFields" :key="sitemapField.key" class="field half">
@@ -213,8 +207,8 @@ const showTabsUi = computed(() => {
 			<!-- Search Engine Controls -->
 			<div v-if="props.showSearchControls" class="field">
 				<label class="label field-label type-label">
-					{{ t('searchControls.title') }}
-					<v-icon v-tooltip="t('searchControls.tooltip')" name="info" small class="info-icon" />
+					Search Engine Controls
+					<v-icon v-tooltip="'Control how search engines interact with this page'" name="info" small class="info-icon" />
 				</label>
 				<div class="form-grid">
 					<interface-boolean
@@ -228,7 +222,7 @@ const showTabsUi = computed(() => {
 					>
 						<template #append>
 							<v-icon
-								v-tooltip="t('searchControls.tooltip')"
+								v-tooltip="'Prevents search engines from indexing this page'"
 								name="visibility_off"
 								small
 								class="info-icon"
@@ -241,10 +235,10 @@ const showTabsUi = computed(() => {
 						<span>
 							{{
 								internalValue.no_index && internalValue.no_follow
-									? t('searchControls.warningBoth')
+									? "This page will be hidden from search engines and its links won't be followed"
 									: internalValue.no_index
-										? t('searchControls.warningNoIndex')
-										: t('searchControls.warningNoFollow')
+										? 'This page will be hidden from search engines'
+										: "Links on this page won't be followed by search engines"
 							}}
 						</span>
 					</v-notice>
@@ -279,21 +273,6 @@ const showTabsUi = computed(() => {
 				:slug-field="slugField"
 				:content-fields="contentFields"
 			/>
-		</TabsContent>
-
-		<TabsContent v-if="showSchemaTab" value="schema" class="tab-content">
-			<!-- Schema Markup -->
-			<div class="field">
-				<label class="label field-label type-label">
-					{{ t('schema.title') }}
-					<v-icon v-tooltip="t('schema.tooltip')" name="info" small class="info-icon" />
-				</label>
-				<SchemaEditor
-					:model-value="internalValue.schema_markup"
-					:disabled="props.disabled"
-					@update:model-value="updateField('schema_markup', $event)"
-				/>
-			</div>
 		</TabsContent>
 	</TabsRoot>
 </template>

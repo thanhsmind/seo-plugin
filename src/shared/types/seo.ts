@@ -12,17 +12,15 @@ export interface SeoFieldState {
 	message: string;
 }
 
-import type { SchemaMarkup } from '../schema/types';
-
-export type { SchemaMarkup };
-
-// Alias for backward compatibility
-export type SchemaMarkupValue = SchemaMarkup;
-
 export interface SeoValue {
 	title: string;
 	meta_description: string;
 	focus_keyphrase?: string;
+	// translations?: {
+	// 	language: string;
+	// 	title: string;
+	// 	meta_description: string;
+	// }[];
 	og_image?: string;
 	additional_fields?: Record<string, string>;
 	sitemap?: {
@@ -31,7 +29,6 @@ export interface SeoValue {
 	};
 	no_index?: boolean;
 	no_follow?: boolean;
-	schema_markup?: SchemaMarkupValue;
 }
 
 export interface SeoInterfaceOptions {
@@ -40,7 +37,6 @@ export interface SeoInterfaceOptions {
 	showOgImage?: boolean;
 	showSearchControls?: boolean;
 	showSitemap?: boolean;
-	showSchema?: boolean;
 	defaultChangeFrequency?: string;
 	defaultPriority?: string;
 	additionalFields?: Array<Record<string, unknown>>;

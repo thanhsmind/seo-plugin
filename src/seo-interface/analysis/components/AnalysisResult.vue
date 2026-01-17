@@ -157,9 +157,6 @@ const densityMeterStatus = computed((): SeoFieldStatus => {
 		&.error {
 			background-color: var(--theme--danger);
 		}
-		&.neutral {
-			background-color: var(--theme--foreground-subdued);
-		}
 	}
 
 	.v-icon {

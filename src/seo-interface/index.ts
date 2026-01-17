@@ -106,18 +106,6 @@ export default defineInterface({
 			},
 		},
 		{
-			field: 'showSchema',
-			name: 'Schema Markup',
-			type: 'boolean',
-			meta: {
-				note: 'Adds Schema.org structured data editor',
-				width: 'half',
-			},
-			schema: {
-				default_value: false,
-			},
-		},
-		{
 			field: 'divider-focus-keyphrase',
 			type: 'alias',
 			meta: {

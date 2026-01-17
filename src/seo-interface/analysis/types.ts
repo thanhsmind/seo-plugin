@@ -1,7 +1,5 @@
 export type AnalysisStatus = 'good' | 'warning' | 'error' | 'neutral';
 
-export type RuleGroup = 'basic' | 'additional' | 'title-readability' | 'content-readability';
-
 export interface AnalysisResultDetails {
 	length?: number;
 	hasKeyphrase?: boolean;
@@ -22,6 +20,5 @@ export interface AnalysisResult {
 	title: string;
 	status: AnalysisStatus;
 	message: string;
-	group?: RuleGroup;
 	details?: AnalysisResultDetails;
 }

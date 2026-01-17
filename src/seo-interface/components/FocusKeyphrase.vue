@@ -16,10 +16,6 @@ const value = computed({
 	set: (val: string) => emit('update:modelValue', val),
 });
 
-const keywords = computed(() =>
-	value.value.split(',').map(k => k.trim()).filter(Boolean)
-);
-
 const inputRef = ref<HTMLElement | null>(null);
 const isEditing = ref<boolean>(!props.modelValue && !props.disabled);
 
@@ -55,22 +51,16 @@ onKeyStroke('Enter', (e) => {
 					ref="inputRef"
 					v-model="value"
 					autofocus
-					placeholder="Từ khóa chính, từ khóa phụ 1, từ khóa phụ 2"
+					placeholder="Enter the main keyword or phrase"
 					@blur="disableEdit"
 				/>
 			</template>
 			<div v-else :class="{ disabled }" class="keyphrase-display">
 				<div v-tooltip="disabled ? null : 'Click to edit'" class="keyphrase-text" :class="{ 'not-clickable': disabled }" @click="enableEdit">
-					<template v-if="keywords.length">
-						<v-chip
-							v-for="(keyword, index) in keywords"
-							:key="index"
-							:class="{ 'primary-keyword': index === 0 }"
-						>
-							{{ keyword }}
-						</v-chip>
-					</template>
-					<span v-else class="keyphrase-placeholder">Từ khóa chính, từ khóa phụ 1, từ khóa phụ 2</span>
+					<v-chip v-if="value">
+						{{ value }}
+					</v-chip>
+					<span v-else class="keyphrase-placeholder">Enter the main keyword or phrase</span>
 				</div>
 				<v-button v-if="!disabled" v-tooltip="'Edit'" small secondary icon @click.stop="enableEdit">
 					<v-icon name="edit" />
@@ -78,7 +68,7 @@ onKeyStroke('Enter', (e) => {
 				<v-icon v-else v-tooltip="'Input disabled'" name="lock" small class="lock-icon" />
 			</div>
 			<div class="hint">
-				Phân cách nhiều từ khóa bằng dấu phẩy. Từ khóa đầu tiên là từ khóa chính.
+				The main phrase you want this content to rank for in search engines.
 			</div>
 		</div>
 	</div>
@@ -128,19 +118,12 @@ onKeyStroke('Enter', (e) => {
 }
 
 .keyphrase-text {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
+	/* flex-grow: 1; */
 	padding-right: 8px;
 	color: var(--theme----theme--form--field--input--foreground);
 }
 .keyphrase-text.not-clickable {
 	cursor: not-allowed;
-}
-
-.primary-keyword {
-	--v-chip-background-color: var(--theme--primary);
-	--v-chip-color: var(--theme--primary-foreground, #fff);
 }
 
 .keyphrase-placeholder {

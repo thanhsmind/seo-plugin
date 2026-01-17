@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Ref } from 'vue';
-import type { AnalysisResult, AnalysisStatus, RuleGroup } from '../../analysis/types';
-import type { RuleStatus, AnalysisResult as EngineAnalysisResult } from '../../../shared/engine/analysis';
+import type { AnalysisResult } from '../../analysis/types';
 import { useDebounceFn } from '@vueuse/core';
 
 import { get } from 'lodash-es';
@@ -13,25 +12,17 @@ import {
 	AccordionTrigger,
 } from 'reka-ui';
 import { computed, inject, ref, watch } from 'vue';
-import { runAnalysis } from '../../../shared/engine/analysis';
-import { t } from '../../locales';
+import {
+	analyzeContent,
+	analyzeDescription,
+	analyzeImageAltText,
+	analyzeSlug,
+	analyzeSubheadings,
+	analyzeTitle,
+} from '../../analysis/utils';
 import AnalysisResultComponent from './AnalysisResult.vue';
-import AnalysisScore from './AnalysisScore.vue';
 
-type SectionId = 'basic' | 'additional' | 'title-readability' | 'content-readability';
-
-interface GroupConfig {
-	id: SectionId;
-	title: string;
-	icon: string;
-}
-
-const GROUP_CONFIGS: GroupConfig[] = [
-	{ id: 'basic', title: 'SEO Cơ bản', icon: 'search' },
-	{ id: 'additional', title: 'Bổ sung', icon: 'add_circle' },
-	{ id: 'title-readability', title: 'Khả năng đọc tiêu đề', icon: 'title' },
-	{ id: 'content-readability', title: 'Khả năng đọc nội dung', icon: 'article' },
-];
+type SectionId = 'problems' | 'improvements' | 'goodResults';
 
 const props = defineProps<{
 	focusKeyphrase: string;
@@ -44,32 +35,6 @@ const props = defineProps<{
 const values = inject('values') as Ref<Record<string, any>>;
 
 const analysisResults = ref<AnalysisResult[]>([]);
-
-function mapRuleStatusToAnalysisStatus(status: RuleStatus): AnalysisStatus {
-	switch (status) {
-		case 'pass':
-			return 'good';
-		case 'fail':
-			return 'error';
-		case 'warning':
-			return 'warning';
-		case 'neutral':
-			return 'neutral';
-		default:
-			return 'neutral';
-	}
-}
-
-function mapEngineResultToAnalysisResult(result: EngineAnalysisResult): AnalysisResult {
-	return {
-		id: result.ruleId,
-		title: result.name,
-		status: mapRuleStatusToAnalysisStatus(result.status),
-		message: result.message,
-		group: result.group as RuleGroup,
-		details: result.data,
-	};
-}
 
 const contentData = computed(() => {
 	if (!props.contentFields || !values) {
@@ -118,22 +83,34 @@ const contentString = computed(() => {
 
 const slugValue = computed(() => values.value[props.slugField as keyof typeof values.value] || '');
 
-const performAnalysis = useDebounceFn(() => {
+const analysisInput = computed(() => ({
+	focusKeyphrase: props.focusKeyphrase,
+	title: props.title,
+	description: props.description,
+	slug: slugValue.value,
+	combinedContent: contentString.value,
+}));
+
+const runAnalysis = useDebounceFn(() => {
 	if (!props.focusKeyphrase) {
 		analysisResults.value = [];
 		return;
 	}
 
-	const context = {
-		focusKeyphrase: props.focusKeyphrase,
-		title: props.title,
-		metaDescription: props.description,
-		slug: slugValue.value,
-		content: contentString.value,
-	};
+	const hasContentFields = props.contentFields && (Array.isArray(props.contentFields) ? props.contentFields.length > 0 : !!props.contentFields);
 
-	const engineResults = runAnalysis(context);
-	analysisResults.value = engineResults.map(mapEngineResultToAnalysisResult);
+	analysisResults.value = [
+		analyzeTitle(analysisInput.value),
+		analyzeDescription(analysisInput.value),
+		analyzeSlug(analysisInput.value),
+		...(hasContentFields
+			? [
+					analyzeContent(analysisInput.value),
+					analyzeImageAltText(analysisInput.value),
+					analyzeSubheadings(analysisInput.value),
+				]
+			: []),
+	];
 }, 500);
 
 watch(
@@ -145,41 +122,42 @@ watch(
 		() => contentData.value,
 	],
 	() => {
-		performAnalysis();
+		runAnalysis();
 	},
 	{ deep: true, immediate: true },
 );
 
 const allAnalyses = computed(() => analysisResults.value);
 
-const seoScore = computed(() => {
-	if (allAnalyses.value.length === 0) return 0;
-	const passedCount = allAnalyses.value.filter((r) => r.status === 'good').length;
-	return Math.round((passedCount / allAnalyses.value.length) * 100);
-});
+const problemResults = computed(() => allAnalyses.value.filter((item) => item.status === 'error'));
+const improvementResults = computed(() => allAnalyses.value.filter((item) => item.status === 'warning'));
+const goodResults = computed(() => allAnalyses.value.filter((item) => item.status === 'good'));
 
-function getResultsByGroup(group: RuleGroup) {
-	return allAnalyses.value.filter((item) => item.group === group);
-}
+const openSectionIds = ref<SectionId[]>(['problems', 'improvements']);
 
-function getPassedCountByGroup(group: RuleGroup) {
-	return getResultsByGroup(group).filter((item) => item.status === 'good').length;
-}
-
-function getTotalCountByGroup(group: RuleGroup) {
-	return getResultsByGroup(group).length;
-}
-
-const openSectionIds = ref<SectionId[]>(['basic', 'additional']);
-
-const sections = computed(() =>
-	GROUP_CONFIGS.map((config) => ({
-		...config,
-		results: getResultsByGroup(config.id),
-		passedCount: getPassedCountByGroup(config.id),
-		totalCount: getTotalCountByGroup(config.id),
-	})),
-);
+const sections = computed(() => [
+	{
+		id: 'problems' as SectionId,
+		title: 'Problems',
+		icon: 'error',
+		iconClass: 'error',
+		results: problemResults.value,
+	},
+	{
+		id: 'improvements' as SectionId,
+		title: 'Improvements',
+		icon: 'warning',
+		iconClass: 'warning',
+		results: improvementResults.value,
+	},
+	{
+		id: 'good' as SectionId,
+		title: 'Good results',
+		icon: 'check_circle',
+		iconClass: 'good',
+		results: goodResults.value,
+	},
+]);
 
 const availableSectionIds = computed(() => sections.value.filter((s) => s.results.length > 0).map((s) => s.id));
 
@@ -192,51 +170,37 @@ function collapseAllSections() {
 }
 
 const hasOnlyNeutralResults = computed(() => {
-	return allAnalyses.value.length > 0 && allAnalyses.value.every((r) => r.status === 'neutral');
+	return allAnalyses.value.length > 0 && availableSectionIds.value.length === 0;
 });
 
 const canCollapseAll = computed(() => openSectionIds.value.length > 0);
 const canExpandAll = computed(() => openSectionIds.value.length < availableSectionIds.value.length);
-
-function getSectionStatusClass(section: { passedCount: number; totalCount: number }) {
-	if (section.totalCount === 0) return 'neutral';
-	if (section.passedCount === section.totalCount) return 'good';
-	if (section.passedCount === 0) return 'problems';
-	return 'improvements';
-}
-
-function getSectionIconClass(section: { passedCount: number; totalCount: number }) {
-	if (section.totalCount === 0) return 'neutral';
-	if (section.passedCount === section.totalCount) return 'good';
-	if (section.passedCount === 0) return 'error';
-	return 'warning';
-}
 </script>
 
 <template>
 	<div class="seo-analysis-container field">
 		<div class="header">
-			<label class="label field-label type-label">{{ t('analysis.title') }}</label>
+			<label class="label field-label type-label">Analysis</label>
 			<div class="action-bar">
 				<v-button
-					v-tooltip="t('analysis.collapseAll')"
+					v-tooltip="'Collapse all'"
 					:disabled="!canCollapseAll"
 					icon
 					small
 					secondary
-					:title="t('analysis.collapseAll')"
+					title="Collapse all"
 					@click="collapseAllSections"
 				>
 					<v-icon name="unfold_less" />
 				</v-button>
 
 				<v-button
-					v-tooltip="t('analysis.expandAll')"
+					v-tooltip="'Expand all'"
 					:disabled="!canExpandAll"
 					icon
 					small
 					secondary
-					:title="t('analysis.expandAll')"
+					title="Expand all"
 					@click="expandAllSections"
 				>
 					<v-icon name="unfold_more" />
@@ -245,12 +209,10 @@ function getSectionIconClass(section: { passedCount: number; totalCount: number 
 		</div>
 
 		<div v-if="!focusKeyphrase" class="empty-state">
-			{{ t('analysis.emptyState') }}
+			Enter a focus keyphrase to analyze your content.
 		</div>
 
 		<template v-else>
-			<AnalysisScore :score="seoScore" />
-
 			<AccordionRoot
 				v-model="openSectionIds"
 				type="multiple"
@@ -266,9 +228,9 @@ function getSectionIconClass(section: { passedCount: number; totalCount: number 
 					>
 						<AccordionHeader class="accordion-header">
 							<AccordionTrigger class="accordion-trigger">
-								<div class="section-title" :class="getSectionStatusClass(section)">
-									<v-icon :name="section.icon" :class="getSectionIconClass(section)" />
-									{{ section.title }} ({{ section.passedCount }}/{{ section.totalCount }})
+								<div class="section-title" :class="section.id">
+									<v-icon :name="section.icon" :class="section.iconClass" />
+									{{ section.title }} ({{ section.results.length }})
 								</div>
 								<v-icon name="chevron_right" class="section-icon" />
 							</AccordionTrigger>
@@ -285,10 +247,10 @@ function getSectionIconClass(section: { passedCount: number; totalCount: number 
 			</AccordionRoot>
 
 			<div v-if="hasOnlyNeutralResults" class="all-neutral-state">
-				{{ t('analysis.allNeutral') }}
+				We found nothing to report! This might happen if content is missing or too short.
 			</div>
 			<div v-else-if="allAnalyses.length === 0 && focusKeyphrase" class="no-results-state">
-				{{ t('analysis.noResults') }}
+				Could not generate analysis results. Check configuration and content fields.
 			</div>
 		</template>
 	</div>
@@ -376,9 +338,6 @@ function getSectionIconClass(section: { passedCount: number; totalCount: number 
 					&.good {
 						color: var(--theme--success);
 					}
-					&.neutral {
-						color: var(--theme--foreground-subdued);
-					}
 
 					> .v-icon {
 						margin-right: 8px;
@@ -391,9 +350,6 @@ function getSectionIconClass(section: { passedCount: number; totalCount: number 
 						}
 						&.good {
 							--v-icon-color: var(--theme--success);
-						}
-						&.neutral {
-							--v-icon-color: var(--theme--foreground-subdued);
 						}
 					}
 				}
