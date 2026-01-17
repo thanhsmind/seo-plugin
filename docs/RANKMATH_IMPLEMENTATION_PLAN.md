@@ -1,6 +1,6 @@
 # RankMath Features Implementation Plan
 
-> Kế hoạch triển khai đầy đủ các chức năng RankMath SEO cho Directus SEO Plugin
+> Kế hoạch triển khai các quy tắc phân tích SEO nội dung cho Directus SEO Plugin
 
 ## Mục lục
 
@@ -8,9 +8,7 @@
 - [Kiến trúc hiện tại](#kiến-trúc-hiện-tại)
 - [Phase 1: Nền tảng](#phase-1-nền-tảng)
 - [Phase 2: SEO Analysis Rules](#phase-2-seo-analysis-rules)
-- [Phase 3: Link & Image Analysis](#phase-3-link--image-analysis)
 - [Cấu trúc thư mục đề xuất](#cấu-trúc-thư-mục-đề-xuất)
-- [Data Schema](#data-schema)
 - [UI/UX Design](#uiux-design)
 
 ---
@@ -18,23 +16,21 @@
 ## Tổng quan
 
 ### Mục tiêu
-Triển khai các tính năng phân tích SEO nội dung bài viết như RankMath, bao gồm:
-- 18 quy tắc phân tích SEO nội dung
-- Schema Markup / Structured Data
-- Link & Image Analysis
+Triển khai các quy tắc phân tích SEO nội dung bài viết như RankMath, tập trung vào:
+- **14 quy tắc phân tích SEO nội dung** (verify content đang viết)
+- **Giữ nguyên cấu trúc plugin hiện tại**
 
-### Nguyên tắc thiết kế cho Headless CMS
-1. **Lưu trữ intent, không lưu HTML** - JSON field chứa cấu hình SEO, frontend tự render
-2. **Shared Engine** - Library dùng chung cho cả editor và frontend
-3. **Backward Compatible** - Không phá vỡ dữ liệu hiện tại
+### Nguyên tắc thiết kế
+1. **Backward Compatible** - Không phá vỡ dữ liệu và cấu trúc hiện tại
+2. **Content Verification** - Chỉ tập trung vào kiểm tra nội dung đang viết
+3. **Real-time Analysis** - Phân tích ngay khi người dùng nhập liệu
 
 ### Ước tính thời gian
 | Phase | Mô tả | Thời gian |
 |-------|-------|-----------|
-| Phase 1 | Nền tảng | 1-2 ngày |
-| Phase 2 | SEO Analysis Rules | 2-3 ngày |
-| Phase 3 | Link & Image Analysis | 1 ngày |
-| **Tổng** | | **4-6 ngày** |
+| Phase 1 | Nền tảng (Multiple Keywords) | 0.5 ngày |
+| Phase 2 | SEO Analysis Rules (14 rules) | 2-3 ngày |
+| **Tổng** | | **2.5-3.5 ngày** |
 
 ---
 
@@ -47,13 +43,10 @@ Triển khai các tính năng phân tích SEO nội dung bài viết như RankMa
 - ✅ Custom additional fields
 - ✅ Basic analysis (title/description length)
 
-### Những gì cần thêm (Content SEO)
+### Những gì cần thêm (Content Verification)
 - ❌ Multiple Focus Keywords (comma-separated)
-- ❌ Schema Markup / Structured Data
-- ❌ Advanced SEO Analysis (18 rules)
+- ❌ Advanced SEO Analysis (14 rules)
 - ❌ Readability Analysis
-- ❌ Link Analysis (internal/external)
-- ❌ Image SEO Analysis
 
 ---
 
@@ -90,113 +83,24 @@ function parseKeywords(focusKeyphrase: string): { primary: string; secondary: st
 
 ---
 
-### 1.2 Schema Markup / Structured Data
-
-**Mô tả:** Tạo JSON-LD cho các loại schema phổ biến.
-
-**Supported Schema Types:**
-
-| Type | Fields |
-|------|--------|
-| **Article** | headline, author, datePublished, dateModified, image |
-| **NewsArticle** | + newsSource |
-| **BlogPosting** | + wordCount |
-| **Product** | name, description, image, brand, sku, price, availability, review |
-| **LocalBusiness** | name, address, phone, openingHours, geo, priceRange |
-| **Organization** | name, logo, url, sameAs (social links) |
-| **Person** | name, image, jobTitle, sameAs |
-| **FAQ** | questions[] { question, answer } |
-| **HowTo** | name, description, steps[] { name, text, image } |
-| **Recipe** | name, image, ingredients[], instructions[], cookTime, prepTime |
-| **Event** | name, startDate, endDate, location, performer |
-| **Course** | name, description, provider |
-| **BreadcrumbList** | items[] { name, url } |
-
-**Implementation:**
-```typescript
-// Thêm vào SeoValue
-schema?: {
-  enabled: boolean;
-  type: SchemaType;
-  data: Record<string, any>;
-  // Mapping từ item fields
-  fieldMappings?: Record<string, string>; // schema_field -> item_field
-};
-```
-
-**UI Components:**
-- `SchemaEditor/SchemaTypeSelect.vue` - Chọn loại schema
-- `SchemaEditor/SchemaFieldsForm.vue` - Form động theo loại schema
-- `SchemaEditor/JsonLdPreview.vue` - Preview JSON-LD output
-
-**Builders:**
-```
-src/shared/schema/builders/
-  article.ts
-  product.ts
-  localBusiness.ts
-  faq.ts
-  howTo.ts
-  breadcrumb.ts
-  index.ts (dispatcher)
-```
-
----
-
-### 1.3 Shared SEO Engine
-
-**Mô tả:** Library TypeScript dùng chung cho editor và frontend.
-
-**Public API:**
-```typescript
-// src/shared/engine/index.ts
-
-export interface SeoEngine {
-  // Phân tích nội dung
-  analyze(config: AnalyzeConfig): AnalysisResult;
-  
-  // Tạo meta tags
-  buildMeta(seoValue: SeoValue, itemValues: Record<string, any>): MetaTags;
-  
-  // Tạo JSON-LD
-  buildJsonLd(seoValue: SeoValue, itemValues: Record<string, any>): JsonLd;
-  
-  // Tạo robots meta string
-  buildRobots(seoValue: SeoValue): string;
-}
-```
-
-**Modules:**
-```
-src/shared/engine/
-  index.ts          # Public API
-  text.ts           # Tokenize, word count, normalize
-  html.ts           # Parse HTML, extract links/images
-  templates.ts      # Apply mustache templates
-  urls.ts           # Canonical URL building
-  robots.ts         # Map directives to meta string
-```
-
----
-
 ## Phase 2: SEO Analysis Rules
 
 ### 2.1 Tổng quan Rules
 
-Chia thành 4 nhóm như RankMath:
+Chia thành 4 nhóm tập trung vào **verify content đang viết**:
 
 1. **SEO Cơ bản (Basic SEO)** - 5 rules
-2. **Bổ sung (Additional)** - 6 rules
+2. **Bổ sung (Additional)** - 4 rules
 3. **Khả năng đọc tiêu đề (Title Readability)** - 1 rule
-4. **Khả năng đọc nội dung (Content Readability)** - 6 rules
+4. **Khả năng đọc nội dung (Content Readability)** - 4 rules
 
-**Tổng: 18 rules**
+**Tổng: 14 rules**
 
-> ⚠️ **Đã tối ưu:**
-> - Gộp "Keyword in Title" + "Keyword at Beginning of Title" → 1 rule
-> - Loại bỏ "Keyword in Content" (đã bao gồm trong "Keyword Density")
-> - Gộp "External Links" + "DoFollow External Link" → 1 rule
-> - Loại bỏ "Unique Focus Keyword" (cần query database)
+> ⚠️ **Đã loại bỏ (không liên quan verify content):**
+> - ~~External Links~~ (cần siteUrl config phức tạp)
+> - ~~Internal Links~~ (cần siteUrl config phức tạp)
+> - ~~Flesch Reading Score~~ (phức tạp cho tiếng Việt)
+> - ~~Passive Voice~~ (không chính xác cho tiếng Việt)
 
 ---
 
@@ -416,68 +320,12 @@ Chia thành 4 nhóm như RankMath:
     fail: (v) => `URL dài ${v} ký tự. Nên rút ngắn dưới 75 ký tự.`,
   }
 }
-```
-
-#### Rule 10: External Links (Gộp với DoFollow check)
-```typescript
-{
-  id: 'external-links',
-  group: 'additional',
-  name: 'Liên kết bên ngoài',
-  description: 'Nội dung nên có liên kết đến tài nguyên bên ngoài, tốt nhất có ít nhất 1 dofollow',
-  check: (context) => {
-    const { content, siteUrl } = context;
-    const links = extractLinks(content);
-    const externalLinks = links.filter(l => isExternalLink(l.href, siteUrl));
-    const dofollowLinks = externalLinks.filter(l => !l.rel?.includes('nofollow'));
-    
-    return {
-      pass: externalLinks.length > 0,
-      value: { 
-        total: externalLinks.length, 
-        dofollow: dofollowLinks.length 
-      },
-    };
-  },
-  messages: {
-    pass: (v) => v.dofollow > 0
-      ? `Tuyệt vời! Có ${v.total} liên kết bên ngoài (${v.dofollow} dofollow).`
-      : `Có ${v.total} liên kết bên ngoài nhưng không có dofollow.`,
-    fail: 'Hãy thêm ít nhất một liên kết đến tài nguyên bên ngoài uy tín.',
-  }
-}
-```
-
-#### Rule 11: Internal Links
-```typescript
-{
-  id: 'internal-links',
-  group: 'additional',
-  name: 'Liên kết nội bộ',
-  description: 'Nội dung nên có liên kết đến các trang khác trên website',
-  check: (context) => {
-    const { content, siteUrl } = context;
-    const links = extractLinks(content);
-    const internalLinks = links.filter(l => isInternalLink(l.href, siteUrl));
-    return {
-      pass: internalLinks.length > 0,
-      value: internalLinks.length,
-    };
-  },
-  messages: {
-    pass: 'Bạn đang liên kết đến các tài nguyên khác trên trang web của mình, điều này thật tuyệt.',
-    fail: 'Hãy thêm liên kết đến các trang khác trên website của bạn.',
-  }
-}
-```
 
 ---
 
 ### 2.4 Khả năng đọc tiêu đề (Title Readability)
 
-> ℹ️ "Keyword at Beginning of Title" đã được gộp vào Rule 1.
-
-#### Rule 12: Number in Title
+#### Rule 10: Number in Title
 ```typescript
 {
   id: 'number-in-title',
@@ -499,7 +347,7 @@ Chia thành 4 nhóm như RankMath:
 
 ### 2.5 Khả năng đọc nội dung (Content Readability)
 
-#### Rule 13: Table of Contents
+#### Rule 11: Table of Contents
 ```typescript
 {
   id: 'table-of-contents',
@@ -523,7 +371,7 @@ Chia thành 4 nhóm như RankMath:
 }
 ```
 
-#### Rule 14: Short Paragraphs
+#### Rule 12: Short Paragraphs
 ```typescript
 {
   id: 'short-paragraphs',
@@ -549,7 +397,7 @@ Chia thành 4 nhóm như RankMath:
 }
 ```
 
-#### Rule 15: Has Media (Images/Videos)
+#### Rule 13: Has Media (Images/Videos)
 ```typescript
 {
   id: 'has-media',
@@ -569,38 +417,7 @@ Chia thành 4 nhóm như RankMath:
 }
 ```
 
-#### Rule 16: Flesch Reading Score
-```typescript
-{
-  id: 'flesch-reading-score',
-  group: 'content-readability',
-  name: 'Điểm đọc Flesch',
-  description: 'Nội dung nên dễ đọc với điểm Flesch >= 60',
-  thresholds: {
-    veryEasy: 90,      // 90-100
-    easy: 80,          // 80-89
-    fairlyEasy: 70,    // 70-79
-    standard: 60,      // 60-69
-    fairlyDifficult: 50, // 50-59
-    difficult: 30,     // 30-49
-    veryDifficult: 0,  // 0-29
-  },
-  check: (context) => {
-    const { content } = context;
-    const score = calculateFleschScore(content);
-    return {
-      pass: score >= 60,
-      value: score,
-    };
-  },
-  messages: {
-    pass: (v) => `Điểm đọc Flesch: ${v.toFixed(1)}. Nội dung dễ đọc.`,
-    fail: (v) => `Điểm đọc Flesch: ${v.toFixed(1)}. Nội dung khó đọc, hãy đơn giản hóa.`,
-  }
-}
-```
-
-#### Rule 17: Sentence Length
+#### Rule 14: Sentence Length
 ```typescript
 {
   id: 'sentence-length',
@@ -626,104 +443,18 @@ Chia thành 4 nhóm như RankMath:
     fail: (v) => `${v.percentage.toFixed(0)}% câu quá dài (>20 từ). Nên dưới 25%.`,
   }
 }
-```
-
-#### Rule 18: Passive Voice
-```typescript
-{
-  id: 'passive-voice',
-  group: 'content-readability',
-  name: 'Câu bị động',
-  description: 'Không quá 10% câu nên ở thể bị động',
-  thresholds: {
-    maxPassivePercentage: 10,
-  },
-  check: (context) => {
-    const { content } = context;
-    const sentences = extractSentences(content);
-    const passiveSentences = sentences.filter(s => isPassiveVoice(s));
-    const percentage = (passiveSentences.length / sentences.length) * 100;
-    return {
-      pass: percentage <= 10,
-      value: percentage,
-    };
-  },
-  messages: {
-    pass: 'Sử dụng câu chủ động tốt.',
-    fail: (v) => `${v.toFixed(0)}% câu ở thể bị động. Nên dưới 10%.`,
-  }
-}
-```
-
----
-
-## Phase 3: Link & Image Analysis
-
-### 3.1 Link Extraction & Analysis
-
-**Functions:**
-```typescript
-interface ExtractedLink {
-  href: string;
-  text: string;
-  rel?: string;
-  isExternal: boolean;
-  isDoFollow: boolean;
-}
-
-function extractLinks(html: string): ExtractedLink[];
-function isExternalLink(href: string, siteUrl: string): boolean;
-function isInternalLink(href: string, siteUrl: string): boolean;
-function countLinksByType(links: ExtractedLink[]): LinkStats;
-```
-
-**UI Display:**
-- Số lượng internal links
-- Số lượng external links
-- Số lượng dofollow/nofollow links
-- Danh sách links (expandable)
-
----
-
-### 3.2 Image Analysis
-
-**Functions:**
-```typescript
-interface ExtractedImage {
-  src: string;
-  alt?: string;
-  title?: string;
-  width?: number;
-  height?: number;
-}
-
-function extractImages(html: string): ExtractedImage[];
-function analyzeImageAlt(images: ExtractedImage[]): ImageAltStats;
-```
-
-**Rules:**
-- Images without alt text
-- Alt text too short (< 5 chars)
-- Alt text too long (> 125 chars)
-- Alt text contains keyword
 
 ---
 
 ## Cấu trúc thư mục đề xuất
 
+> Giữ nguyên cấu trúc hiện tại, chỉ thêm rules mới
+
 ```
 src/
 ├── shared/
 │   ├── types/
-│   │   ├── seo.ts                    # SeoValue, SeoInterfaceOptions
-│   │   ├── schema.ts                 # Schema types (Article, Product, etc.)
-│   │   └── analysis.ts               # AnalysisResult, Rule types
-│   │
-│   ├── engine/
-│   │   ├── index.ts                  # Public API: analyze(), buildMeta(), buildJsonLd()
-│   │   ├── text.ts                   # Text utilities: tokenize, normalize, countWords
-│   │   ├── html.ts                   # HTML parser: extractLinks, extractImages, extractHeadings
-│   │   └── templates.ts              # Mustache template processing
+│   │   └── seo.ts                    # SeoValue, SeoInterfaceOptions (giữ nguyên)
 │   │
 │   ├── analysis/
 │   │   ├── index.ts                  # Analysis runner
@@ -734,180 +465,45 @@ src/
 │   │   │   │   ├── keyword-in-description.ts
 │   │   │   │   ├── keyword-in-url.ts
 │   │   │   │   ├── keyword-in-first-10-percent.ts
-│   │   │   │   ├── keyword-in-content.ts
 │   │   │   │   └── content-length.ts
 │   │   │   ├── additional/
 │   │   │   │   ├── keyword-in-subheadings.ts
 │   │   │   │   ├── keyword-in-image-alt.ts
 │   │   │   │   ├── keyword-density.ts
-│   │   │   │   ├── url-length.ts
-│   │   │   │   ├── external-links.ts
-│   │   │   │   ├── dofollow-external-link.ts
-│   │   │   │   ├── internal-links.ts
-│   │   │   │   └── unique-focus-keyword.ts
+│   │   │   │   └── url-length.ts
 │   │   │   ├── title-readability/
-│   │   │   │   ├── keyword-at-title-beginning.ts
 │   │   │   │   └── number-in-title.ts
 │   │   │   └── content-readability/
 │   │   │       ├── table-of-contents.ts
 │   │   │       ├── short-paragraphs.ts
 │   │   │       ├── has-media.ts
-│   │   │       ├── flesch-reading-score.ts
-│   │   │       ├── sentence-length.ts
-│   │   │       └── passive-voice.ts
+│   │   │       └── sentence-length.ts
 │   │   └── locales/
 │   │       ├── en.ts                 # English messages
 │   │       └── vi.ts                 # Vietnamese messages
 │   │
-│   ├── schema/
-│   │   ├── index.ts                  # Schema dispatcher
-│   │   ├── types.ts                  # Schema type definitions
-│   │   ├── validators.ts             # Schema validation
-│   │   └── builders/
-│   │       ├── article.ts
-│   │       ├── product.ts
-│   │       ├── local-business.ts
-│   │       ├── organization.ts
-│   │       ├── person.ts
-│   │       ├── faq.ts
-│   │       ├── how-to.ts
-│   │       ├── recipe.ts
-│   │       ├── event.ts
-│   │       ├── course.ts
-│   │       └── breadcrumb.ts
-│   │
-│   ├── components/
-│   │   ├── ProgressBar.vue
-│   │   ├── SearchPreview.vue
-│   │   └── ScoreBadge.vue           # NEW: Score badge component
-│   │
-│   ├── composables/
-│   │   ├── useSeoField.ts
-│   │   └── useAnalysis.ts           # NEW: Analysis composable
-│   │
-│   ├── styles/
-│   │   └── shared.scss
-│   │
-│   ├── rulesets.ts
-│   └── utils.ts
+│   ├── components/                   # Giữ nguyên
+│   ├── composables/                  # Giữ nguyên
+│   ├── styles/                       # Giữ nguyên
+│   ├── rulesets.ts                   # Giữ nguyên
+│   └── utils.ts                      # Giữ nguyên
 │
-├── seo-interface/
-│   ├── index.ts
-│   ├── interface.vue
-│   ├── fields.ts
-│   ├── shims.d.ts
-│   │
+├── seo-interface/                    # Giữ nguyên cấu trúc
 │   ├── analysis/
 │   │   ├── types.ts
-│   │   ├── utils.ts
+│   │   ├── utils.ts                  # Cập nhật để sử dụng rules mới
 │   │   └── components/
-│   │       ├── Analysis.vue          # Main analysis component
-│   │       ├── AnalysisResult.vue    # Individual result
-│   │       ├── AnalysisGroup.vue     # NEW: Group of results (Basic, Additional, etc.)
+│   │       ├── Analysis.vue
+│   │       ├── AnalysisResult.vue
+│   │       ├── AnalysisGroup.vue     # NEW: Group of results
 │   │       └── AnalysisScore.vue     # NEW: Overall score display
 │   │
 │   └── components/
-│       ├── FocusKeyphrase.vue        # Updated: support comma-separated keywords
-│       ├── MetaDescriptionField.vue
-│       ├── SeoFieldWrapper.vue
-│       ├── TitleField.vue
-│       ├── CustomFields.vue
-│       │
-│       └── schema/                   # NEW
-│           ├── SchemaTypeSelect.vue
-│           ├── SchemaFieldsForm.vue
-│           ├── SchemaFieldMapping.vue
-│           └── JsonLdPreview.vue
+│       ├── FocusKeyphrase.vue        # Cập nhật: support comma-separated
+│       └── ... (giữ nguyên)
 │
-├── seo-display/
-│   ├── index.ts
-│   ├── display.vue
-│   └── shims.d.ts
-│
-└── lang/
-    └── translations/
-        ├── en-US.yaml
-        └── vi-VN.yaml               # NEW: Vietnamese translations
-```
-
----
-
-## Data Schema
-
-### SeoValue Interface (Content SEO Focus)
-
-```typescript
-// src/shared/types/seo.ts
-
-export interface SeoValue {
-  title: string;
-  meta_description: string;
-  focus_keyphrase?: string;           // Comma-separated cho multiple keywords
-  additional_fields?: Record<string, string>;
-}
-```
-
-### Dữ liệu mới lưu trong `additional_fields`
-
-```typescript
-// Ví dụ cấu trúc additional_fields cho các tính năng mới
-additional_fields: {
-  // Schema Markup (JSON string)
-  schema_markup: '{"enabled":true,"type":"Article","data":{...}}',
-  
-  // Breadcrumbs (JSON string)
-  breadcrumbs: '[{"name":"Home","url":"/"},{"name":"Blog","url":"/blog"}]',
-  
-  // Các field custom khác...
-}
-```
-
-### Parsing Utilities
-
-```typescript
-// src/shared/utils/additional-fields.ts
-
-export function getSchemaMarkup(seoValue: SeoValue): SchemaMarkup | undefined {
-  const json = seoValue.additional_fields?.schema_markup;
-  return json ? JSON.parse(json) : undefined;
-}
-
-export function getBreadcrumbs(seoValue: SeoValue): Breadcrumb[] | undefined {
-  const json = seoValue.additional_fields?.breadcrumbs;
-  return json ? JSON.parse(json) : undefined;
-}
-```
-
-### Type Definitions
-
-```typescript
-export interface SchemaMarkup {
-  enabled: boolean;
-  type: SchemaType;
-  data: Record<string, any>;
-  field_mappings?: Record<string, string>;
-}
-
-export interface Breadcrumb {
-  name: string;
-  url: string;
-}
-
-export type SchemaType = 
-  | 'Article'
-  | 'NewsArticle'
-  | 'BlogPosting'
-  | 'Product'
-  | 'LocalBusiness'
-  | 'Organization'
-  | 'Person'
-  | 'FAQ'
-  | 'HowTo'
-  | 'Recipe'
-  | 'Event'
-  | 'Course'
-  | 'BreadcrumbList'
-  | 'WebPage';
+├── seo-display/                      # Giữ nguyên
+└── lang/                             # Giữ nguyên
 ```
 
 ---
@@ -925,7 +521,7 @@ export type SchemaType =
 **Basic Tab:** Title, Meta Description, Search Preview, OG Image
 **Advanced Tab:** Sitemap Settings, Search Engine Controls (noindex/nofollow)
 **Custom Fields Tab:** Additional custom fields
-**Keyphrase Tab:** Focus Keyphrase + Analysis Results (18 rules)
+**Keyphrase Tab:** Focus Keyphrase + Analysis Results (14 rules)
 
 ### Analysis Section Layout
 
@@ -934,31 +530,51 @@ export type SchemaType =
 │  SEO Score: 85/100  ████████████████░░░░                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  🟢 SEO Cơ bản                              ✓ Tất cả đều tốt   │
+│  🟢 SEO Cơ bản (5 rules)                    ✓ Tất cả đều tốt   │
 │  ├─ ✅ Từ khóa trong Tiêu đề SEO                               │
 │  ├─ ✅ Từ khóa trong Mô tả Meta                                │
 │  ├─ ✅ Từ khóa trong URL                                       │
 │  ├─ ✅ Từ khóa trong 10% đầu                                   │
-│  ├─ ✅ Từ khóa trong nội dung                                  │
 │  └─ ✅ Nội dung dài 2450 từ                                    │
 │                                                                 │
-│  🟡 Bổ sung                                  ⚠ 1 Lỗi           │
+│  🟡 Bổ sung (4 rules)                       ⚠ 1 Lỗi           │
 │  ├─ ✅ Từ khóa trong tiêu đề phụ                               │
 │  ├─ ❌ Không có từ khóa trong alt hình ảnh                     │
 │  ├─ ✅ Mật độ từ khóa: 1.2% (15 lần)                           │
-│  └─ ...                                                         │
+│  └─ ✅ URL dài 45 ký tự                                        │
 │                                                                 │
-│  🔵 Khả năng đọc tiêu đề                    ✓ Tất cả đều tốt   │
-│  ├─ ✅ Từ khóa ở đầu tiêu đề                                   │
+│  🔵 Khả năng đọc tiêu đề (1 rule)          ✓ Tất cả đều tốt   │
 │  └─ ✅ Có số trong tiêu đề                                     │
 │                                                                 │
-│  🟣 Khả năng đọc nội dung                   ✓ Tất cả đều tốt   │
+│  🟣 Khả năng đọc nội dung (4 rules)        ✓ Tất cả đều tốt   │
 │  ├─ ✅ Có mục lục                                              │
 │  ├─ ✅ Đoạn văn ngắn                                           │
-│  └─ ✅ Có hình ảnh/video                                       │
+│  ├─ ✅ Có hình ảnh/video                                       │
+│  └─ ✅ Độ dài câu phù hợp                                      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Tóm tắt 14 Rules
+
+| # | Rule | Nhóm | Mô tả |
+|---|------|------|-------|
+| 1 | Keyword in Title | Basic | Từ khóa trong tiêu đề SEO |
+| 2 | Keyword in Description | Basic | Từ khóa trong mô tả meta |
+| 3 | Keyword in URL | Basic | Từ khóa trong slug |
+| 4 | Keyword in First 10% | Basic | Từ khóa trong 10% đầu nội dung |
+| 5 | Content Length | Basic | Độ dài nội dung >= 600 từ |
+| 6 | Keyword in Subheadings | Additional | Từ khóa trong H2-H6 |
+| 7 | Keyword in Image Alt | Additional | Từ khóa trong alt hình ảnh |
+| 8 | Keyword Density | Additional | Mật độ 0.5%-2.5% |
+| 9 | URL Length | Additional | URL <= 75 ký tự |
+| 10 | Number in Title | Title Readability | Có số trong tiêu đề |
+| 11 | Table of Contents | Content Readability | Có mục lục (>1500 từ) |
+| 12 | Short Paragraphs | Content Readability | Đoạn văn < 150 từ |
+| 13 | Has Media | Content Readability | Có hình ảnh/video |
+| 14 | Sentence Length | Content Readability | <= 25% câu > 20 từ |
 
 ---
 
@@ -966,6 +582,7 @@ export type SchemaType =
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.0 | - | Simplified to 14 rules for content verification only |
 | 1.1.0 | - | Simplified to Content SEO only (removed Social, Robots, API Extensions) |
 | 1.0.0 | - | Initial plan |
 
@@ -975,6 +592,4 @@ export type SchemaType =
 
 - [RankMath SEO Plugin](https://rankmath.com/)
 - [RankMath GitHub](https://github.com/rankmath/seo-by-rank-math)
-- [Schema.org](https://schema.org/)
 - [Google Search Central](https://developers.google.com/search)
-- [Flesch Reading Ease](https://en.wikipedia.org/wiki/Flesch%E2%80%93Kincaid_readability_tests)
