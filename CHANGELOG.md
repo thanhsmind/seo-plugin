@@ -1,32 +1,5 @@
 # Changelog
 
-## 1.2.1 - 2025-04-22
-
-### Improvements
-
--   **Internationalization (i18n):** Added full Vietnamese and English translations for UI tabs, labels, tooltips, and messages
--   **Unified Schema Types:** Consolidated `SchemaMarkup` and `SchemaMarkupValue` types for better type consistency
--   **Interface Locales:** New locale system for interface components with support for vi/en languages
--   **Analysis Engine:** Fixed status handling for `warning` and `neutral` rule results
--   **18 SEO Rules:** All rules fully operational with proper status mapping (pass/fail/warning/neutral)
-
----
-
-## 1.2.0 - 2025-04-22
-
-### Features
-
--   **Schema Markup / Structured Data:** Added full Schema.org JSON-LD support with 14 schema types (Article, Product, FAQ, HowTo, LocalBusiness, Organization, Person, Event, Course, Recipe, BreadcrumbList, etc.)
--   **Schema Editor UI:** New tab with schema type selector, dynamic form builder, and live JSON-LD preview
--   **18 SEO Analysis Rules:** Complete RankMath-style SEO analysis with 4 groups (Basic SEO, Additional, Title Readability, Content Readability)
-
-### Improvements
-
--   **Shared SEO Engine:** Added reusable text, HTML, and keyword analysis utilities
--   **Multiple Focus Keywords:** Support comma-separated keywords for comprehensive analysis
-
----
-
 ## 1.1.0 - 2025-04-21
 
 ### Features

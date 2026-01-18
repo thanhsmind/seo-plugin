@@ -8,14 +8,12 @@ A powerful SEO management extension that helps you optimize your content for sea
 
 - Title and meta description (with template support)
 - Visual search result previews
-- **Focus keyphrase analysis with 18 SEO rules** (RankMath-style)
-- **Schema Markup / Structured Data** (JSON-LD) with 14 schema types
-- Social media image and **previews**
+- **Focus keyphrase analysis** (new!)
+- Social media image and **previews** (new!)
 - Sitemap configuration
 - Search engine indexing controls
-- Custom SEO fields support (like canonical URLs, custom meta tags, etc.)
+- Custom SEO fields support (like canonical URLs, custom meta tags, JSON-LD, etc.)
 - SEO status monitoring with hover preview from the layout view
-- **Bilingual support** (English & Vietnamese)
 
 **Interface** (shown in the item view)
 
@@ -32,22 +30,12 @@ A powerful SEO management extension that helps you optimize your content for sea
 - **Title**: The most crucial SEO element. Should be compelling and include your main keyword (recommended length: 45-60 characters)
 - **Meta Description**: Your page's summary in search results. Make it engaging to improve click-through rates (recommended length: 130-160 characters)
 
-#### Keyphrase Analysis (18 SEO Rules)
+#### Keyphrase Analysis (New!)
 
 ![SEO Interface Keyphrase](https://raw.githubusercontent.com/directus-labs/extensions/main/packages/seo-plugin/docs/seo-plugin-interface-keyphrase.png)
 
-- **Focus Keyphrase**: The primary keyword or phrase you want the page to rank for. Supports multiple keywords (comma-separated).
-- **SEO Analysis**: RankMath-style analysis with 18 rules across 4 groups:
-  - **Basic SEO**: Keyword in title, description, URL, first 10% of content, content length
-  - **Additional**: Keyword in subheadings, image alt, keyword density, URL length, internal/external links
-  - **Title Readability**: Number in title
-  - **Content Readability**: Table of contents, paragraph length, media, subheadings, sentence length
-
-#### Schema Markup (Structured Data)
-
-- **14 Schema Types**: Article, NewsArticle, BlogPosting, Product, LocalBusiness, Organization, Person, FAQ, HowTo, Recipe, Event, Course, BreadcrumbList, WebPage
-- **JSON-LD Output**: Automatic generation of Schema.org compliant JSON-LD
-- **Live Preview**: Real-time preview of the generated structured data
+- **Focus Keyphrase**: The primary keyword or phrase you want the page to rank for.
+- **Analysis**: Provides feedback on the keyphrase's presence and usage in the title, meta description, URL slug, and main content fields. Highlights problems, improvements, and good results.
 
 #### Social Media
 - **OG Image**: The image that appears when your page is shared on social media. Crucial for increasing social engagement.
@@ -74,27 +62,19 @@ OG Image stores the UUID of the uploaded image. You'll want to make sure your fr
 ```json
 {
 	"title": "This is the Directus SEO Plugin.",
-	"meta_description": "A powerful SEO management extension that helps you optimize your content for search engines and social media sharing, right within Directus.",
+	"meta_description": "A powerful SEO management extension that helps you optimize your content for search engines and social media sharing, right within Directus. It includes a comprehensive interface for managing metadata and a display component for monitoring SEO status.",
 	"og_image": "f5d20d13-e86a-4aaa-ab1c-241925b89ea3",
-	"focus_keyphrase": "Directus SEO, SEO plugin, headless CMS",
+	"focus_keyphrase": "Directus SEO",
 	"additional_fields": {
-		"canonical_url": "https://directus.io/"
+		"canonical_url": "https://directus.io/",
+		"custom_meta_tag": "This is a custom meta tag"
 	},
 	"sitemap": {
 		"change_frequency": "monthly",
 		"priority": "0.5"
 	},
 	"no_index": false,
-	"no_follow": false,
-	"schema_markup": {
-		"enabled": true,
-		"type": "Article",
-		"data": {
-			"headline": "This is the Directus SEO Plugin",
-			"author": "Directus Team",
-			"datePublished": "2025-04-22"
-		}
-	}
+	"no_follow": false
 }
 ```
 
@@ -116,14 +96,10 @@ The interface provides a comprehensive form, organized into tabs, for managing S
     - Sitemap configuration options
 - **Custom Fields Tab**:
     - Support for adding custom SEO-related fields (e.g., canonical URL, custom meta tags)
-- **Keyphrase Tab**:
-    - Input for the focus keyphrase (supports multiple keywords, comma-separated)
-    - 18 SEO analysis rules with score calculation
-    - Feedback organized in collapsible groups (Basic, Additional, Title/Content Readability)
-- **Schema Tab**:
-    - Schema type selector (14 types)
-    - Dynamic form for schema properties
-    - Live JSON-LD preview with copy functionality
+- **Keyphrase Tab** (new!):
+    - Input for the focus keyphrase
+    - Detailed analysis of keyphrase usage in title, description, slug, and content
+    - Feedback categorized into Problems, Improvements, and Good results
 
 ![SEO Interface Progress Bar](https://raw.githubusercontent.com/directus-labs/extensions/main/packages/seo-plugin/docs/seo-plugin-interface-progress.png)
 
@@ -197,12 +173,7 @@ The interface can be configured with the following options:
      - Default priority (preset to '0.5')
    - Disabled by default
 
-7. **Schema Markup**
-   - Toggle to enable/disable the Schema Markup tab.
-   - Provides structured data editor with 14 schema types
-   - Disabled by default
-
-8. **Custom SEO Fields**
+7. **Custom SEO Fields**
    - Toggle to enable/disable the Custom Fields tab.
    - Disabled by default
 
@@ -234,20 +205,12 @@ npm install @directus-labs/seo-plugin
 
 ## Roadmap 🗺️
 
-**Completed in v1.2.0:**
-- ✅ 18 SEO Analysis Rules (RankMath-style)
-- ✅ Schema Markup / Structured Data (14 types)
-- ✅ Multiple focus keywords support
-- ✅ Vietnamese language support
-
 **Planned:**
 - Support for translating the title and meta description fields
 - Field label and description translations
-- More schema types (VideoObject, Review, etc.)
 
 **Maybe:**
 - Add support for relational fields in the template
-- AI-powered SEO suggestions
 
 ## Contributing 🤝
 
