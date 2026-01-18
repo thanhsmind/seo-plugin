@@ -7,7 +7,7 @@
  */
 export function stripHtml(html: string): string {
 	if (!html) return '';
-	return html.replaceAll(/<[^>]*>/g, ' ').replaceAll(/\s+/g, ' ').trim();
+	return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -16,17 +16,17 @@ export function stripHtml(html: string): string {
 export function stripMarkdown(md: string): string {
 	if (!md) return '';
 	return md
-		.replaceAll(/\*\*(.+?)\*\*/g, '$1') // Bold
-		.replaceAll(/\*(.+?)\*/g, '$1') // Italic
-		.replaceAll(/__(.+?)__/g, '$1') // Bold
-		.replaceAll(/_(.+?)_/g, '$1') // Italic
-		.replaceAll(/```(.+?)```/g, '$1') // Code blocks
-		.replaceAll(/`(.+?)`/g, '$1') // Inline code
-		.replaceAll(/\[(.+?)\]\(.+?\)/g, '$1') // Links
-		.replaceAll(/!\[(.+?)\]\(.+?\)/g, '$1') // Images
-		.replaceAll(/#{1,6}\s+(.+)/g, '$1') // Headings
-		.replaceAll(/\n+/g, ' ') // Newlines
-		.replaceAll(/\s+/g, ' ')
+		.replace(/\*\*(.+?)\*\*/g, '$1') // Bold
+		.replace(/\*(.+?)\*/g, '$1') // Italic
+		.replace(/__(.+?)__/g, '$1') // Bold
+		.replace(/_(.+?)_/g, '$1') // Italic
+		.replace(/```(.+?)```/g, '$1') // Code blocks
+		.replace(/`(.+?)`/g, '$1') // Inline code
+		.replace(/\[(.+?)\]\(.+?\)/g, '$1') // Links
+		.replace(/!\[(.+?)\]\(.+?\)/g, '$1') // Images
+		.replace(/#{1,6}\s+(.+)/g, '$1') // Headings
+		.replace(/\n+/g, ' ') // Newlines
+		.replace(/\s+/g, ' ')
 		.trim();
 }
 
@@ -53,7 +53,6 @@ export function countWords(text: string): number {
 export function countOccurrences(text: string, sub: string): number {
 	if (!text || !sub) return 0;
 
-	const normalizedText = text.toLowerCase();
 	const normalizedSub = sub.toLowerCase();
 
 	if (normalizedSub.length === 0) return 0;
@@ -74,9 +73,9 @@ export function normalizeSlug(slug: string): string {
 		.normalize('NFD')
 		.replace(/[\u0300-\u036f]/g, '') // Remove Vietnamese accents
 		.replace(/[đĐ]/g, 'd')
-		.replaceAll(/[^\w\s-]/g, '')
-		.replaceAll(/[\s_]+/g, '-')
-		.replaceAll(/-+/g, '-')
+		.replace(/[^\w\s-]/g, '')
+		.replace(/[\s_]+/g, '-')
+		.replace(/-+/g, '-')
 		.trim();
 }
 

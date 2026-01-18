@@ -8,13 +8,15 @@ import { allRules } from './rules';
 import { parseKeywords } from './utils';
 
 const GROUP_NAMES: Record<RuleGroup, string> = {
-	'basic': 'SEO Cơ bản',
+	'basic': 'SEO Cơ bản (v1.1)',
 	'additional': 'Bổ sung',
 	'title-readability': 'Khả năng đọc tiêu đề',
 	'content-readability': 'Khả năng đọc nội dung',
 };
 
 const GROUP_ORDER: RuleGroup[] = ['basic', 'additional', 'title-readability', 'content-readability'];
+
+console.log('[SEO Plugin] Analysis Engine v1.1 Loaded');
 
 function getMessage(rule: SeoAnalysisRule, status: 'pass' | 'fail' | 'skip', value?: Record<string, unknown>): string {
 	if (status === 'skip') {
