@@ -36,7 +36,7 @@
 				"source": "src/seo-display/index.ts"
 			}
 		],
-		"host": "^10.10.0"
+		"host": "^11.14.0"
 	},
 	"scripts": {
 		"build": "directus-extension build",
