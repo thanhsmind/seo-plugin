@@ -39,11 +39,12 @@ export function normalizeContent(content: string): string {
 }
 
 /**
- * Counts words in a string
+ * Counts words in a string, optimized for Vietnamese and other languages
  */
 export function countWords(text: string): number {
 	if (!text) return 0;
-	return text.split(/\s+/).filter(Boolean).length;
+	// Improved word counting for Vietnamese (handling compound words by spaces)
+	return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
 /**
@@ -55,10 +56,12 @@ export function countOccurrences(text: string, sub: string): number {
 	const normalizedText = text.toLowerCase();
 	const normalizedSub = sub.toLowerCase();
 
-	// Return 0 if the substring is empty
 	if (normalizedSub.length === 0) return 0;
 
-	return normalizedText.split(normalizedSub).length - 1;
+	// Use regex with escape for special characters to count occurrences
+	const escapedSub = normalizedSub.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const regex = new RegExp(escapedSub, 'gi');
+	return (text.match(regex) || []).length;
 }
 
 /**
@@ -68,9 +71,13 @@ export function normalizeSlug(slug: string): string {
 	if (!slug) return '';
 	return slug
 		.toLowerCase()
-		.replaceAll(/[^\w\s-]/g, '') // Remove special characters
-		.replaceAll(/[\s_]+/g, '-') // Replace spaces and underscores with hyphens
-		.replaceAll(/-+/g, '-'); // Remove duplicate hyphens
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '') // Remove Vietnamese accents
+		.replace(/[đĐ]/g, 'd')
+		.replaceAll(/[^\w\s-]/g, '')
+		.replaceAll(/[\s_]+/g, '-')
+		.replaceAll(/-+/g, '-')
+		.trim();
 }
 
 /**
@@ -82,6 +89,62 @@ export function calculateDensity(text: string, keyword: string): number {
 
 	const keywordCount = countOccurrences(text, keyword);
 	return (keywordCount / wordCount) * 100;
+}
+
+/**
+ * Extracts links and categorizes them as internal or external
+ */
+export function extractLinks(html: string, currentHost?: string): { internal: string[]; external: string[] } {
+	const internal: string[] = [];
+	const external: string[] = [];
+
+	if (!html) return { internal, external };
+
+	const linkRegex = /<a[^>]*href=["']([^"']*)["'][^>]*>/gi;
+	let match;
+
+	while ((match = linkRegex.exec(html)) !== null) {
+		const href = match[1];
+		if (!href || href.startsWith('#') || href.startsWith('javascript:')) continue;
+
+		if (href.startsWith('/') || (currentHost && href.includes(currentHost))) {
+			internal.push(href);
+		} else if (href.startsWith('http')) {
+			external.push(href);
+		}
+	}
+
+	// Also support Markdown links [text](url)
+	const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+	while ((match = mdLinkRegex.exec(html)) !== null) {
+		const href = match[2];
+		if (!href || href.startsWith('#')) continue;
+
+		if (href.startsWith('/') || (currentHost && href.includes(currentHost))) {
+			internal.push(href);
+		} else if (href.startsWith('http')) {
+			external.push(href);
+		}
+	}
+
+	return { internal, external };
+}
+
+/**
+ * Checks if a string contains any numbers
+ */
+export function hasNumber(text: string): boolean {
+	return /\d/.test(text);
+}
+
+/**
+ * Checks if a string contains a focus keyword in the first N characters/percentage
+ */
+export function isKeywordInPrefix(text: string, keyword: string, percentage: number = 10): boolean {
+	if (!text || !keyword) return false;
+	const lengthToCheck = Math.ceil(text.length * (percentage / 100));
+	const prefix = text.substring(0, lengthToCheck).toLowerCase();
+	return prefix.includes(keyword.toLowerCase());
 }
 
 /**

@@ -25,6 +25,7 @@ export interface RuleResultValue {
 	skipped?: boolean;
 	urlLength?: number;
 	longParagraphs?: number;
+	length?: number;
 	[key: string]: unknown;
 }
 

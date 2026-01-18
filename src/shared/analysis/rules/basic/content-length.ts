@@ -1,7 +1,9 @@
 import type { SeoAnalysisRule } from '../../types';
 import { countWords } from '../../utils';
 
-const MINIMUM_WORDS = 600;
+const IDEAL_MIN = 600;
+const GOOD_MIN = 1000;
+const BEST_MIN = 2500;
 
 export const contentLengthRule: SeoAnalysisRule = {
 	id: 'content-length',
@@ -18,13 +20,18 @@ export const contentLengthRule: SeoAnalysisRule = {
 		const wordCount = countWords(content);
 
 		return {
-			status: wordCount >= MINIMUM_WORDS ? 'pass' : 'fail',
+			status: wordCount >= IDEAL_MIN ? 'pass' : 'fail',
 			value: { wordCount },
 		};
 	},
 	messages: {
-		pass: (v) => `Nội dung dài ${v?.wordCount} từ. Làm tốt lắm!`,
-		fail: (v) => `Nội dung chỉ có ${v?.wordCount} từ. Nên có ít nhất ${MINIMUM_WORDS} từ.`,
+		pass: (v) => {
+			const count = v?.wordCount ?? 0;
+			if (count >= BEST_MIN) return `Bản trường ca này dài ${count} từ. Tuyệt vời cho SEO chuyên sâu!`;
+			if (count >= GOOD_MIN) return `Nội dung dài ${count} từ. Rất tốt!`;
+			return `Nội dung dài ${count} từ. Tạm ổn.`;
+		},
+		fail: (v) => `Nội dung chỉ có ${v?.wordCount ?? 0} từ. Khuyến nghị: 600 (Tạm ổn), 1000 (Tốt), 2500 (Tuyệt vời).`,
 		skip: 'Không có nội dung để phân tích.',
 	},
 };

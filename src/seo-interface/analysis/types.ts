@@ -13,6 +13,12 @@ export interface AnalysisResultDetails {
 	altTexts?: string[];
 	subheadingCount?: number;
 	subheadings?: string[];
+	startsWithKeyphrase?: boolean;
+	inFirst10?: boolean;
+	internalLinks?: number;
+	externalLinks?: number;
+	hasTOC?: boolean;
+	containsNumber?: boolean;
 }
 
 export interface AnalysisResult {

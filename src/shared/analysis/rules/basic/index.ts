@@ -3,3 +3,5 @@ export { keywordInDescriptionRule } from './keyword-in-description';
 export { keywordInUrlRule } from './keyword-in-url';
 export { keywordInFirst10PercentRule } from './keyword-in-first-10-percent';
 export { contentLengthRule } from './content-length';
+export { titleLengthRule } from './title-length';
+export { descriptionLengthRule } from './description-length';

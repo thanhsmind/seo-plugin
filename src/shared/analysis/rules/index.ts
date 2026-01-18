@@ -3,10 +3,12 @@ import type { SeoAnalysisRule } from '../types';
 // Basic SEO Rules
 import {
 	contentLengthRule,
+	descriptionLengthRule,
 	keywordInDescriptionRule,
 	keywordInFirst10PercentRule,
 	keywordInTitleRule,
 	keywordInUrlRule,
+	titleLengthRule,
 } from './basic';
 
 // Additional Rules
@@ -30,7 +32,9 @@ import {
 
 export const basicRules: SeoAnalysisRule[] = [
 	keywordInTitleRule,
+	titleLengthRule,
 	keywordInDescriptionRule,
+	descriptionLengthRule,
 	keywordInUrlRule,
 	keywordInFirst10PercentRule,
 	contentLengthRule,
@@ -64,7 +68,9 @@ export const allRules: SeoAnalysisRule[] = [
 export {
 	// Basic
 	keywordInTitleRule,
+	titleLengthRule,
 	keywordInDescriptionRule,
+	descriptionLengthRule,
 	keywordInUrlRule,
 	keywordInFirst10PercentRule,
 	contentLengthRule,

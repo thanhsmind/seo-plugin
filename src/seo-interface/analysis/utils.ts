@@ -1,13 +1,16 @@
 import type { AnalysisResult } from './types';
-import { seoRules } from '../../shared/rulesets';
+import { keywordRules, seoRules } from '../../shared/rulesets';
 import {
 	calculateDensity,
-	countOccurrences,
 	countWords,
 	extractImageAltText,
+	extractLinks,
 	extractSubheadings,
+	hasNumber,
+	isKeywordInPrefix,
 	normalizeContent,
 	normalizeSlug,
+	stripHtml,
 } from '../../shared/utils';
 
 interface AnalysisInput {
@@ -24,53 +27,62 @@ export function analyzeTitle(input: AnalysisInput): AnalysisResult {
 			id: 'title',
 			title: 'SEO Title',
 			status: 'neutral',
-			message: 'Add a focus keyphrase first',
+			message: 'Nhập từ khóa trọng tâm trước',
 		};
 	}
-
-	const titleLength = input.title?.length || 0;
-	const hasKeyphrase = input.title?.toLowerCase().includes(input.focusKeyphrase.toLowerCase()) || false;
-	const isTitleLengthGood = titleLength >= seoRules.title.minLength && titleLength <= seoRules.title.maxLength;
 
 	if (!input.title) {
 		return {
 			id: 'title',
 			title: 'SEO Title',
 			status: 'error',
-			message: 'Add a title',
+			message: 'Vui lòng nhập tiêu đề SEO',
 		};
 	}
+
+	const titleLength = input.title.length;
+	const hasKeyphrase = input.title.toLowerCase().includes(input.focusKeyphrase.toLowerCase());
+	const isLengthGood = titleLength >= seoRules.title.minLength && titleLength <= seoRules.title.maxLength;
+	const startsWithKeyphrase = input.title.toLowerCase().startsWith(input.focusKeyphrase.toLowerCase());
+	const containsNumber = hasNumber(input.title);
 
 	if (!hasKeyphrase) {
 		return {
 			id: 'title',
 			title: 'SEO Title',
-			status: 'warning',
-			message: 'Your focus keyphrase is not in the SEO title',
-			details: {
-				length: titleLength,
-				hasKeyphrase,
-				minLength: seoRules.title.minLength,
-				maxLength: seoRules.title.maxLength,
-			},
+			status: 'error',
+			message: 'Từ khóa trọng tâm không xuất hiện trong tiêu đề SEO',
 		};
 	}
 
-	if (!isTitleLengthGood) {
-		const message = titleLength < seoRules.title.minLength
-			? `Title is too short (${titleLength} chars). Ideal: ${seoRules.title.minLength}-${seoRules.title.maxLength} characters.`
-			: `Title is too long (${titleLength} chars). Ideal: ${seoRules.title.minLength}-${seoRules.title.maxLength} characters.`;
+	if (!isLengthGood) {
 		return {
 			id: 'title',
 			title: 'SEO Title',
 			status: 'warning',
-			message,
-			details: {
-				length: titleLength,
-				hasKeyphrase,
-				minLength: seoRules.title.minLength,
-				maxLength: seoRules.title.maxLength,
-			},
+			message: `Độ dài tiêu đề (${titleLength}) chưa tối ưu. Khuyến nghị: ${seoRules.title.minLength}-${seoRules.title.maxLength} ký tự.`,
+		};
+	}
+
+	if (!startsWithKeyphrase) {
+		// RankMath prefers keyword at the beginning
+		const keywordPos = input.title.toLowerCase().indexOf(input.focusKeyphrase.toLowerCase());
+		if (keywordPos > titleLength / 2) {
+			return {
+				id: 'title',
+				title: 'SEO Title',
+				status: 'warning',
+				message: 'Từ khóa nên xuất hiện ở nửa đầu tiêu đề để có kết quả tốt nhất',
+			};
+		}
+	}
+
+	if (!containsNumber) {
+		return {
+			id: 'title',
+			title: 'SEO Title',
+			status: 'warning', // Power words alternative in RankMath
+			message: 'Tiêu đề của bạn không chứa con số (ví dụ: "Top 10..."). Các bài viết có con số thường có CTR cao hơn.',
 		};
 	}
 
@@ -78,13 +90,8 @@ export function analyzeTitle(input: AnalysisInput): AnalysisResult {
 		id: 'title',
 		title: 'SEO Title',
 		status: 'good',
-		message: 'Your SEO title contains the focus keyphrase and has a good length',
-		details: {
-			length: titleLength,
-			hasKeyphrase,
-			minLength: seoRules.title.minLength,
-			maxLength: seoRules.title.maxLength,
-		},
+		message: 'Tiêu đề SEO của bạn đã được tối ưu tốt',
+		details: { length: titleLength, hasKeyphrase, startsWithKeyphrase, containsNumber },
 	};
 }
 
@@ -94,54 +101,38 @@ export function analyzeDescription(input: AnalysisInput): AnalysisResult {
 			id: 'description',
 			title: 'Meta Description',
 			status: 'neutral',
-			message: 'Add a focus keyphrase first',
+			message: 'Nhập từ khóa trọng tâm trước',
 		};
 	}
-
-	const descriptionLength = input.description?.length || 0;
-	const hasKeyphrase = input.description?.toLowerCase().includes(input.focusKeyphrase.toLowerCase()) || false;
-	const isDescriptionLengthGood = descriptionLength >= seoRules.meta_description.minLength
-		&& descriptionLength <= seoRules.meta_description.maxLength;
 
 	if (!input.description) {
 		return {
 			id: 'description',
 			title: 'Meta Description',
 			status: 'error',
-			message: 'Add a meta description',
+			message: 'Vui lòng nhập mô tả meta',
 		};
 	}
+
+	const length = input.description.length;
+	const hasKeyphrase = input.description.toLowerCase().includes(input.focusKeyphrase.toLowerCase());
+	const isLengthGood = length >= seoRules.meta_description.minLength && length <= seoRules.meta_description.maxLength;
 
 	if (!hasKeyphrase) {
 		return {
 			id: 'description',
 			title: 'Meta Description',
 			status: 'warning',
-			message: 'Your focus keyphrase is not in the meta description',
-			details: {
-				length: descriptionLength,
-				hasKeyphrase,
-				minLength: seoRules.meta_description.minLength,
-				maxLength: seoRules.meta_description.maxLength,
-			},
+			message: 'Từ khóa trọng tâm không xuất hiện trong mô tả meta',
 		};
 	}
 
-	if (!isDescriptionLengthGood) {
-		const message = descriptionLength < seoRules.meta_description.minLength
-			? `Meta description is too short (${descriptionLength} chars). Ideal: ${seoRules.meta_description.minLength}-${seoRules.meta_description.maxLength} characters.`
-			: `Meta description is too long (${descriptionLength} chars). Ideal: ${seoRules.meta_description.minLength}-${seoRules.meta_description.maxLength} characters.`;
+	if (!isLengthGood) {
 		return {
 			id: 'description',
 			title: 'Meta Description',
 			status: 'warning',
-			message,
-			details: {
-				length: descriptionLength,
-				hasKeyphrase,
-				minLength: seoRules.meta_description.minLength,
-				maxLength: seoRules.meta_description.maxLength,
-			},
+			message: `Độ dài mô tả (${length}) chưa tối ưu. Khuyến nghị: ${seoRules.meta_description.minLength}-${seoRules.meta_description.maxLength} ký tự.`,
 		};
 	}
 
@@ -149,46 +140,41 @@ export function analyzeDescription(input: AnalysisInput): AnalysisResult {
 		id: 'description',
 		title: 'Meta Description',
 		status: 'good',
-		message: 'Your meta description contains the focus keyphrase and has a good length',
-		details: {
-			length: descriptionLength,
-			hasKeyphrase,
-			minLength: seoRules.meta_description.minLength,
-			maxLength: seoRules.meta_description.maxLength,
-		},
+		message: 'Mô tả meta đã chứa từ khóa và có độ dài lý tưởng',
+		details: { length, hasKeyphrase },
 	};
 }
 
 export function analyzeSlug(input: AnalysisInput): AnalysisResult {
-	if (!input.focusKeyphrase) {
+	if (!input.focusKeyphrase || !input.slug) {
 		return {
 			id: 'slug',
 			title: 'URL Slug',
 			status: 'neutral',
-			message: 'Add a focus keyphrase first',
-		};
-	}
-
-	if (!input.slug) {
-		return {
-			id: 'slug',
-			title: 'URL Slug',
-			status: 'error',
-			message: 'Add a slug',
+			message: 'Cần từ khóa và slug để phân tích',
 		};
 	}
 
 	const normalizedSlug = normalizeSlug(input.slug);
 	const normalizedKeyphrase = normalizeSlug(input.focusKeyphrase);
 	const hasKeyphrase = normalizedSlug.includes(normalizedKeyphrase);
+	const length = input.slug.length;
 
 	if (!hasKeyphrase) {
 		return {
 			id: 'slug',
 			title: 'URL Slug',
 			status: 'warning',
-			message: 'Your focus keyphrase is not in the URL slug',
-			details: { hasKeyphrase },
+			message: 'Từ khóa không xuất hiện trong URL (Slug)',
+		};
+	}
+
+	if (length > seoRules.slug.maxLength) {
+		return {
+			id: 'slug',
+			title: 'URL Slug',
+			status: 'warning',
+			message: `URL quá dài (${length} ký tự). Khuyến nghị không quá ${seoRules.slug.maxLength} ký tự.`,
 		};
 	}
 
@@ -196,95 +182,127 @@ export function analyzeSlug(input: AnalysisInput): AnalysisResult {
 		id: 'slug',
 		title: 'URL Slug',
 		status: 'good',
-		message: 'Your slug contains the focus keyphrase',
-		details: { hasKeyphrase },
+		message: 'URL đã được tối ưu',
+		details: { length, hasKeyphrase },
 	};
 }
 
 export function analyzeContent(input: AnalysisInput): AnalysisResult {
-	if (!input.focusKeyphrase) {
+	if (!input.focusKeyphrase || !input.combinedContent) {
 		return {
 			id: 'content',
 			title: 'Content',
 			status: 'neutral',
-			message: 'Add a focus keyphrase first',
-		};
-	}
-
-	if (!input.combinedContent) {
-		return {
-			id: 'content',
-			title: 'Content',
-			status: 'neutral',
-			message: 'No content provided for analysis',
+			message: 'Cần nội dung để phân tích',
 		};
 	}
 
 	const cleanContent = normalizeContent(input.combinedContent);
 	const wordCount = countWords(cleanContent);
+	const density = calculateDensity(cleanContent, input.focusKeyphrase);
+	const inFirst10 = isKeywordInPrefix(cleanContent, input.focusKeyphrase, 10);
+	const links = extractLinks(input.combinedContent);
+
+	// Paragraph Analysis (Basic check for long text blocks)
+	const paragraphs = input.combinedContent.split(/\n\s*\n/);
+	const longParagraphs = paragraphs.filter(p => countWords(stripHtml(p)) > 120);
+
+	// Table of Contents Check
+	const hasTOC = /toc|table-of-contents|mục lục|nội dung chính/i.test(input.combinedContent) ||
+		(extractLinks(input.combinedContent).internal.some(link => link.startsWith('#')));
 
 	if (wordCount < 50) {
 		return {
 			id: 'content',
-			title: 'Content',
-			status: 'warning',
-			message: 'Your content is too short for a proper keyword density analysis',
-			details: { wordCount, density: 0, occurrences: 0, optimal: false },
-		};
-	}
-
-	const keyphraseOccurrences = countOccurrences(cleanContent, input.focusKeyphrase);
-	const density = calculateDensity(cleanContent, input.focusKeyphrase);
-	const isOptimalDensity = density >= 0.5 && density <= 2;
-
-	if (keyphraseOccurrences === 0) {
-		return {
-			id: 'content',
-			title: 'Content',
+			title: 'Nội dung',
 			status: 'error',
-			message: 'Your focus keyphrase does not appear in the content',
-			details: { wordCount, density: 0, occurrences: 0, optimal: false },
+			message: 'Nội dung quá ngắn để phân tích SEO',
 		};
 	}
 
-	if (!isOptimalDensity) {
-		const message = density < 0.5
-			? `Keyword density (${density.toFixed(1)}%) is too low. Optimal: 0.5%-2.0%.`
-			: `Keyword density (${density.toFixed(1)}%) is too high. Optimal: 0.5%-2.0%.`;
+	if (density === 0) {
 		return {
 			id: 'content',
-			title: 'Content',
-			status: 'warning',
-			message,
-			details: { wordCount, density, occurrences: keyphraseOccurrences, optimal: false },
+			title: 'Nội dung',
+			status: 'error',
+			message: 'Từ khóa trọng tâm không xuất hiện trong nội dung',
 		};
 	}
+
+	if (!inFirst10) {
+		return {
+			id: 'content',
+			title: 'Nội dung',
+			status: 'warning',
+			message: 'Từ khóa không xuất hiện trong 10% đầu tiên của nội dung',
+		};
+	}
+
+	if (density < keywordRules.density.min || density > keywordRules.density.max) {
+		return {
+			id: 'content',
+			title: 'Nội dung',
+			status: 'warning',
+			message: `Mật độ từ khóa (${density.toFixed(1)}%) chưa lý tưởng (Khuyến nghị: ${keywordRules.density.min}% - ${keywordRules.density.max}%)`,
+		};
+	}
+
+	if (links.external.length === 0) {
+		return {
+			id: 'content',
+			title: 'Liên kết',
+			status: 'warning',
+			message: 'Bài viết chưa có liên kết ra bên ngoài (Outbound links)',
+		};
+	}
+
+	if (links.internal.length === 0) {
+		return {
+			id: 'content',
+			title: 'Liên kết',
+			status: 'warning',
+			message: 'Chưa có liên kết nội bộ (Internal links)',
+		};
+	}
+
+	if (longParagraphs.length > 0) {
+		return {
+			id: 'content',
+			title: 'Cấu trúc',
+			status: 'warning',
+			message: 'Có một số đoạn văn quá dài (> 120 từ). Hãy chia nhỏ để dễ đọc hơn.',
+		};
+	}
+
+	if (!hasTOC && wordCount > 1000) {
+		return {
+			id: 'content',
+			title: 'Cấu trúc',
+			status: 'warning',
+			message: 'Bài viết dài (>1000 từ) nên có Mục lục (Table of Contents)',
+		};
+	}
+
+	let lengthMsg = wordCount >= seoRules.content.maxLength ? 'Độ dài bài viết tuyệt vời!' :
+		wordCount >= seoRules.content.minLength ? 'Độ dài bài viết khá tốt.' :
+			'Nội dung hơi ngắn (khuyến nghị trên 600 từ).';
 
 	return {
 		id: 'content',
-		title: 'Content',
-		status: 'good',
-		message: `Your content has a good keyword density (${density.toFixed(1)}%)`,
-		details: { wordCount, density, occurrences: keyphraseOccurrences, optimal: true },
+		title: 'Nội dung',
+		status: wordCount >= seoRules.content.minLength ? 'good' : 'warning',
+		message: `${lengthMsg} (Tổng cộng: ${wordCount} từ).`,
+		details: { wordCount, density, inFirst10, internalLinks: links.internal.length, externalLinks: links.external.length, hasTOC },
 	};
 }
 
 export function analyzeImageAltText(input: AnalysisInput): AnalysisResult {
-	if (!input.focusKeyphrase) {
+	if (!input.focusKeyphrase || !input.combinedContent) {
 		return {
 			id: 'image_alt',
 			title: 'Image Alt Text',
 			status: 'neutral',
-			message: 'Add a focus keyphrase first',
-		};
-	}
-
-	if (!input.combinedContent) {
-		return {
-			id: 'image_alt',
-			title: 'Image Alt Text',
-			status: 'neutral',
-			message: 'No content to analyze for images',
+			message: 'Cần từ khóa và nội dung để đếm ảnh',
 		};
 	}
 
@@ -293,10 +311,9 @@ export function analyzeImageAltText(input: AnalysisInput): AnalysisResult {
 	if (altTexts.length === 0) {
 		return {
 			id: 'image_alt',
-			title: 'Image Alt Text',
-			status: 'neutral',
-			message: 'No images found in the content',
-			details: { imageCount: 0, altTexts: [] },
+			title: 'Ảnh',
+			status: 'warning',
+			message: 'Bài viết không có hình ảnh. Nên có ít nhất 1-3 ảnh.',
 		};
 	}
 
@@ -307,38 +324,28 @@ export function analyzeImageAltText(input: AnalysisInput): AnalysisResult {
 	if (!keyphraseInAlt) {
 		return {
 			id: 'image_alt',
-			title: 'Image Alt Text',
+			title: 'Ảnh',
 			status: 'warning',
-			message: 'None of your images have alt attributes containing your focus keyphrase',
-			details: { imageCount: altTexts.length, altTexts },
+			message: 'Các thẻ Alt của ảnh chưa chứa từ khóa trọng tâm',
 		};
 	}
 
 	return {
 		id: 'image_alt',
-		title: 'Image Alt Text',
+		title: 'Ảnh',
 		status: 'good',
-		message: 'At least one image has an alt attribute with the focus keyphrase',
-		details: { imageCount: altTexts.length, altTexts },
+		message: `Đã tìm thấy ${altTexts.length} ảnh và có từ khóa trong thẻ Alt`,
+		details: { imageCount: altTexts.length },
 	};
 }
 
 export function analyzeSubheadings(input: AnalysisInput): AnalysisResult {
-	if (!input.focusKeyphrase) {
+	if (!input.focusKeyphrase || !input.combinedContent) {
 		return {
 			id: 'subheadings',
 			title: 'Subheadings',
 			status: 'neutral',
-			message: 'Add a focus keyphrase first',
-		};
-	}
-
-	if (!input.combinedContent) {
-		return {
-			id: 'subheadings',
-			title: 'Subheadings',
-			status: 'neutral',
-			message: 'No content to analyze for subheadings',
+			message: 'Cần từ khóa và nội dung để quét thẻ tiêu đề phụ',
 		};
 	}
 
@@ -347,10 +354,9 @@ export function analyzeSubheadings(input: AnalysisInput): AnalysisResult {
 	if (subheadings.length === 0) {
 		return {
 			id: 'subheadings',
-			title: 'Subheadings',
+			title: 'Tiêu đề phụ',
 			status: 'warning',
-			message: 'No subheadings found in the content',
-			details: { subheadingCount: 0, subheadings: [] },
+			message: 'Không tìm thấy các thẻ H2-H6 trong nội dung',
 		};
 	}
 
@@ -361,18 +367,17 @@ export function analyzeSubheadings(input: AnalysisInput): AnalysisResult {
 	if (!keyphraseInSubheadings) {
 		return {
 			id: 'subheadings',
-			title: 'Subheadings',
+			title: 'Tiêu đề phụ',
 			status: 'warning',
-			message: 'Your subheadings don\'t contain the focus keyphrase',
-			details: { subheadingCount: subheadings.length, subheadings },
+			message: 'Các tiêu đề phụ (H2-H6) chưa chứa từ khóa trọng tâm',
 		};
 	}
 
 	return {
 		id: 'subheadings',
-		title: 'Subheadings',
+		title: 'Tiêu đề phụ',
 		status: 'good',
-		message: 'Your focus keyphrase appears in at least one subheading',
-		details: { subheadingCount: subheadings.length, subheadings },
+		message: 'Từ khóa đã xuất hiện trong tiêu đề phụ',
+		details: { subheadingCount: subheadings.length },
 	};
 }

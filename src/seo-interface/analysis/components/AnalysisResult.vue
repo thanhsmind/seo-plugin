@@ -87,7 +87,7 @@ const densityMeterStatus = computed((): SeoFieldStatus => {
 			<div v-if="detailComponent" class="analysis-details">
 				<!-- Title & Description details -->
 				<div v-if="detailComponent.type === 'length'">
-					Length: {{ detailComponent.data.length }} characters
+					Độ dài: {{ detailComponent.data.length }} ký tự
 					<ProgressBar
 						:progress="lengthMeterProgress"
 						:status="lengthMeterStatus"
@@ -97,10 +97,10 @@ const densityMeterStatus = computed((): SeoFieldStatus => {
 
 				<!-- Content details -->
 				<div v-else-if="detailComponent.type === 'content'">
-					Word count: {{ detailComponent.data.wordCount }}
+					Số từ: {{ detailComponent.data.wordCount }}
 					<template v-if="detailComponent.data.occurrences && detailComponent.data.occurrences > 0 && typeof detailComponent.data.density === 'number'">
-						<br>Occurrences: {{ detailComponent.data.occurrences }} times
-						<br>Density: {{ detailComponent.data.density.toFixed(1) }}%
+						<br>Số lần xuất hiện: {{ detailComponent.data.occurrences }} lần
+						<br>Mật độ: {{ detailComponent.data.density.toFixed(1) }}%
 						<ProgressBar
 							:progress="densityMeterProgress"
 							:status="densityMeterStatus"
@@ -111,7 +111,7 @@ const densityMeterStatus = computed((): SeoFieldStatus => {
 
 				<!-- Image alt text details -->
 				<div v-else-if="detailComponent.type === 'image'">
-					Found {{ detailComponent.data.imageCount }} images{{ result.status === 'good' ? ' with proper alt text' : '' }}
+					Tìm thấy {{ detailComponent.data.imageCount }} ảnh{{ result.status === 'good' ? ' với thẻ alt phù hợp' : '' }}
 					<ul v-if="detailComponent.data.altTexts && detailComponent.data.altTexts.length > 0">
 						<li v-for="(alt, index) in detailComponent.data.altTexts" :key="index">
 							"{{ alt }}"
@@ -121,7 +121,7 @@ const densityMeterStatus = computed((): SeoFieldStatus => {
 
 				<!-- Subheadings details -->
 				<div v-else-if="detailComponent.type === 'subheadings'">
-					Found {{ detailComponent.data.subheadingCount }} subheadings
+					Tìm thấy {{ detailComponent.data.subheadingCount }} tiêu đề phụ
 					<ul v-if="detailComponent.data.subheadings && detailComponent.data.subheadings.length > 0">
 						<li v-for="(heading, index) in detailComponent.data.subheadings" :key="index">
 							"{{ heading }}"
