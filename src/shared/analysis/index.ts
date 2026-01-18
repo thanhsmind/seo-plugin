@@ -3,8 +3,9 @@
  * Runs all SEO analysis rules and returns grouped results
  */
 
-import type { GroupedRuleResults, RuleAnalysisResult, RuleContext, RuleGroup, SeoAnalysisRule } from './types';
+import type { GroupedRuleResults, KeywordAnalysisResult, MultiKeywordAnalysisResult, RuleAnalysisResult, RuleContext, RuleGroup, SeoAnalysisRule } from './types';
 import { allRules } from './rules';
+import { parseKeywords } from './utils';
 
 const GROUP_NAMES: Record<RuleGroup, string> = {
 	'basic': 'SEO Cơ bản',
@@ -73,6 +74,82 @@ export function calculateScore(results: RuleAnalysisResult[]): number {
 	const passCount = scorableResults.filter(r => r.status === 'pass').length;
 
 	return Math.round((passCount / scorableResults.length) * 100);
+}
+
+/**
+ * Run analysis for a single keyword
+ */
+export function runKeywordAnalysis(
+	keyword: string,
+	isPrimary: boolean,
+	baseContext: Omit<RuleContext, 'focusKeyphrase'>,
+): KeywordAnalysisResult {
+	const context: RuleContext = {
+		...baseContext,
+		focusKeyphrase: keyword,
+	};
+
+	const results = runAllRules(context).map(r => ({
+		...r,
+		keyword,
+	}));
+
+	const groupedResults = groupRuleResults(results);
+	const score = calculateScore(results);
+
+	return {
+		keyword,
+		isPrimary,
+		score,
+		results,
+		groupedResults,
+	};
+}
+
+/**
+ * Run analysis for multiple keywords (comma-separated)
+ */
+export function runMultiKeywordAnalysis(
+	focusKeyphrase: string,
+	baseContext: Omit<RuleContext, 'focusKeyphrase'>,
+): MultiKeywordAnalysisResult {
+	const { primary, secondary } = parseKeywords(focusKeyphrase);
+
+	if (!primary) {
+		return {
+			keywords: [],
+			overallScore: 0,
+			primaryKeyword: '',
+		};
+	}
+
+	const keywords: KeywordAnalysisResult[] = [];
+
+	// Analyze primary keyword
+	keywords.push(runKeywordAnalysis(primary, true, baseContext));
+
+	// Analyze secondary keywords
+	for (const keyword of secondary) {
+		keywords.push(runKeywordAnalysis(keyword, false, baseContext));
+	}
+
+	// Overall score is weighted: primary keyword counts more
+	const primaryScore = keywords[0]?.score ?? 0;
+	const secondaryScores = keywords.slice(1).map(k => k.score);
+	const avgSecondaryScore = secondaryScores.length > 0
+		? secondaryScores.reduce((a, b) => a + b, 0) / secondaryScores.length
+		: 0;
+
+	// Primary keyword = 70%, Secondary = 30%
+	const overallScore = secondaryScores.length > 0
+		? Math.round(primaryScore * 0.7 + avgSecondaryScore * 0.3)
+		: primaryScore;
+
+	return {
+		keywords,
+		overallScore,
+		primaryKeyword: primary,
+	};
 }
 
 export * from './types';

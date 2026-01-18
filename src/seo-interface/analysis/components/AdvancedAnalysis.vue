@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import type { Ref } from 'vue';
-import type { GroupedRuleResults, RuleAnalysisResult, RuleContext, RuleGroup } from '../../../shared/analysis';
+import type { MultiKeywordAnalysisResult, RuleContext } from '../../../shared/analysis';
 import { useDebounceFn } from '@vueuse/core';
 import { get } from 'lodash-es';
-import { AccordionRoot } from 'reka-ui';
 import { computed, inject, ref, watch } from 'vue';
-import { calculateScore, groupRuleResults, runAllRules } from '../../../shared/analysis';
-import { parseKeywords } from '../../../shared/analysis/utils';
+import { runMultiKeywordAnalysis } from '../../../shared/analysis';
 import { normalizeContent } from '../../../shared/utils';
-import AnalysisGroup from './AnalysisGroup.vue';
-import AnalysisScore from './AnalysisScore.vue';
+import KeywordAnalysis from './KeywordAnalysis.vue';
 
 const props = defineProps<{
 	focusKeyphrase: string;
@@ -21,9 +18,11 @@ const props = defineProps<{
 
 const values = inject('values') as Ref<Record<string, unknown>>;
 
-const analysisResults = ref<RuleAnalysisResult[]>([]);
-const groupedResults = ref<GroupedRuleResults[]>([]);
-const score = ref(0);
+const analysisResult = ref<MultiKeywordAnalysisResult>({
+	keywords: [],
+	overallScore: 0,
+	primaryKeyword: '',
+});
 
 const contentData = computed(() => {
 	if (!props.contentFields || !values) {
@@ -75,30 +74,24 @@ const slugValue = computed(() => {
 	return String(values.value[props.slugField as keyof typeof values.value] || '');
 });
 
-const parsedKeywords = computed(() => parseKeywords(props.focusKeyphrase));
-const primaryKeyword = computed(() => parsedKeywords.value.primary);
-const secondaryKeywords = computed(() => parsedKeywords.value.secondary);
-
-const ruleContext = computed<RuleContext>(() => ({
+const baseContext = computed<Omit<RuleContext, 'focusKeyphrase'>>(() => ({
 	title: props.title,
 	metaDescription: props.description,
-	focusKeyphrase: primaryKeyword.value,
 	slug: slugValue.value,
 	content: normalizeContent(contentString.value),
 }));
 
 const runAnalysis = useDebounceFn(() => {
 	if (!props.focusKeyphrase) {
-		analysisResults.value = [];
-		groupedResults.value = [];
-		score.value = 0;
+		analysisResult.value = {
+			keywords: [],
+			overallScore: 0,
+			primaryKeyword: '',
+		};
 		return;
 	}
 
-	const results = runAllRules(ruleContext.value);
-	analysisResults.value = results;
-	groupedResults.value = groupRuleResults(results);
-	score.value = calculateScore(results);
+	analysisResult.value = runMultiKeywordAnalysis(props.focusKeyphrase, baseContext.value);
 }, 500);
 
 watch(
@@ -115,40 +108,14 @@ watch(
 	{ deep: true, immediate: true },
 );
 
-const openGroups = ref<RuleGroup[]>(['basic', 'additional']);
+const hasResults = computed(() => analysisResult.value.keywords.length > 0);
+const hasMultipleKeywords = computed(() => analysisResult.value.keywords.length > 1);
 
-const availableGroups = computed(() => groupedResults.value.map(g => g.group));
-
-function expandAll() {
-	openGroups.value = availableGroups.value;
-}
-
-function collapseAll() {
-	openGroups.value = [];
-}
-
-const canExpandAll = computed(() => openGroups.value.length < availableGroups.value.length);
-const canCollapseAll = computed(() => openGroups.value.length > 0);
-
-const hasResults = computed(() => groupedResults.value.length > 0);
-
-const secondaryKeywordStats = computed(() => {
-	if (secondaryKeywords.value.length === 0 || !contentString.value) return [];
-
-	const content = normalizeContent(contentString.value).toLowerCase();
-
-	return secondaryKeywords.value.map(keyword => {
-		const normalizedKeyword = keyword.toLowerCase();
-		let count = 0;
-		let pos = 0;
-
-		while ((pos = content.indexOf(normalizedKeyword, pos)) !== -1) {
-			count++;
-			pos += normalizedKeyword.length;
-		}
-
-		return { keyword, count };
-	});
+const overallScoreColor = computed(() => {
+	const score = analysisResult.value.overallScore;
+	if (score >= 80) return 'success';
+	if (score >= 50) return 'warning';
+	return 'danger';
 });
 </script>
 
@@ -156,69 +123,73 @@ const secondaryKeywordStats = computed(() => {
 	<div class="advanced-analysis field">
 		<div class="header">
 			<label class="label field-label type-label">SEO Analysis</label>
-			<div class="action-bar">
-				<v-button
-					v-tooltip="'Collapse all'"
-					:disabled="!canCollapseAll"
-					icon
-					small
-					secondary
-					title="Collapse all"
-					@click="collapseAll"
-				>
-					<v-icon name="unfold_less" />
-				</v-button>
-				<v-button
-					v-tooltip="'Expand all'"
-					:disabled="!canExpandAll"
-					icon
-					small
-					secondary
-					title="Expand all"
-					@click="expandAll"
-				>
-					<v-icon name="unfold_more" />
-				</v-button>
-			</div>
 		</div>
 
 		<div v-if="!focusKeyphrase" class="empty-state">
 			Nhập từ khóa chính để phân tích nội dung.
+			<br>
+			<small>Phân cách nhiều từ khóa bằng dấu phẩy để kiểm tra từng từ khóa riêng biệt.</small>
 		</div>
 
-		<template v-else>
-			<AnalysisScore v-if="hasResults" :score="score" />
+		<template v-else-if="hasResults">
+			<!-- Overall Score (only show if multiple keywords) -->
+			<div v-if="hasMultipleKeywords" class="overall-score">
+				<div class="overall-header">
+					<span class="overall-label">Điểm tổng hợp</span>
+					<span class="overall-value" :class="overallScoreColor">
+						{{ analysisResult.overallScore }}/100
+					</span>
+				</div>
+				<div class="overall-bar">
+					<div
+						class="overall-progress"
+						:class="overallScoreColor"
+						:style="{ width: `${analysisResult.overallScore}%` }"
+					/>
+				</div>
+				<div class="overall-hint">
+					Điểm từ khóa chính chiếm 70%, từ khóa phụ chiếm 30%
+				</div>
+			</div>
 
-			<!-- Secondary Keywords Stats -->
-			<div v-if="secondaryKeywordStats.length > 0" class="secondary-keywords">
-				<label class="secondary-label">Từ khóa phụ</label>
-				<div class="keyword-chips">
-					<div v-for="stat in secondaryKeywordStats" :key="stat.keyword" class="keyword-chip">
-						<span class="keyword-name">{{ stat.keyword }}</span>
-						<span class="keyword-count" :class="{ zero: stat.count === 0 }">{{ stat.count }}</span>
+			<!-- Keywords Summary -->
+			<div v-if="hasMultipleKeywords" class="keywords-summary">
+				<div class="summary-label">Phân tích {{ analysisResult.keywords.length }} từ khóa:</div>
+				<div class="summary-chips">
+					<div
+						v-for="kw in analysisResult.keywords"
+						:key="kw.keyword"
+						class="summary-chip"
+						:class="{ primary: kw.isPrimary }"
+					>
+						<span class="chip-keyword">{{ kw.keyword }}</span>
+						<span
+							class="chip-score"
+							:class="{
+								success: kw.score >= 80,
+								warning: kw.score >= 50 && kw.score < 80,
+								danger: kw.score < 50,
+							}"
+						>
+							{{ kw.score }}
+						</span>
 					</div>
 				</div>
 			</div>
 
-			<AccordionRoot
-				v-if="hasResults"
-				v-model="openGroups"
-				type="multiple"
-				collapsible
-				class="groups-accordion"
-				:unmount-on-hide="false"
-			>
-				<AnalysisGroup
-					v-for="group in groupedResults"
-					:key="group.group"
-					:group="group"
+			<!-- Individual Keyword Analysis -->
+			<div class="keywords-analysis">
+				<KeywordAnalysis
+					v-for="kw in analysisResult.keywords"
+					:key="kw.keyword"
+					:result="kw"
 				/>
-			</AccordionRoot>
-
-			<div v-else class="no-results-state">
-				Không có kết quả phân tích. Kiểm tra cấu hình và nội dung.
 			</div>
 		</template>
+
+		<div v-else class="no-results-state">
+			Không có kết quả phân tích. Kiểm tra cấu hình và nội dung.
+		</div>
 	</div>
 </template>
 
@@ -247,23 +218,82 @@ const secondaryKeywordStats = computed(() => {
 	background-color: var(--theme--background-subdued);
 	text-align: center;
 	margin-top: 16px;
+
+	small {
+		opacity: 0.8;
+	}
 }
 
-.action-bar {
+.overall-score {
 	margin-bottom: 16px;
-	margin-top: -4px;
-	display: flex;
-	gap: 8px;
-	justify-content: flex-end;
+	padding: 12px;
+	background-color: var(--theme--background-subdued);
+	border-radius: var(--theme--border-radius);
+	border: 2px solid var(--theme--primary);
 }
 
-.groups-accordion {
+.overall-header {
 	display: flex;
-	flex-direction: column;
-	gap: 12px;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
 }
 
-.secondary-keywords {
+.overall-label {
+	font-weight: 600;
+	color: var(--theme--foreground);
+}
+
+.overall-value {
+	font-weight: 700;
+	font-size: 1.2em;
+
+	&.success {
+		color: var(--theme--success);
+	}
+
+	&.warning {
+		color: var(--theme--warning);
+	}
+
+	&.danger {
+		color: var(--theme--danger);
+	}
+}
+
+.overall-bar {
+	height: 10px;
+	background-color: var(--theme--background-normal);
+	border-radius: 5px;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+.overall-progress {
+	height: 100%;
+	border-radius: 5px;
+	transition: width 0.3s ease;
+
+	&.success {
+		background-color: var(--theme--success);
+	}
+
+	&.warning {
+		background-color: var(--theme--warning);
+	}
+
+	&.danger {
+		background-color: var(--theme--danger);
+	}
+}
+
+.overall-hint {
+	font-size: 0.8em;
+	color: var(--theme--foreground-subdued);
+	font-style: italic;
+}
+
+.keywords-summary {
 	margin-bottom: 16px;
 	padding: 12px;
 	background-color: var(--theme--background-subdued);
@@ -271,50 +301,70 @@ const secondaryKeywordStats = computed(() => {
 	border: 1px solid var(--theme--border-color);
 }
 
-.secondary-label {
-	display: block;
+.summary-label {
 	font-size: 0.85em;
 	font-weight: 600;
 	color: var(--theme--foreground-subdued);
 	margin-bottom: 8px;
 }
 
-.keyword-chips {
+.summary-chips {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
 }
 
-.keyword-chip {
+.summary-chip {
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	padding: 4px 8px;
+	padding: 4px 10px;
 	background-color: var(--theme--background);
 	border: 1px solid var(--theme--border-color);
-	border-radius: 12px;
+	border-radius: 16px;
 	font-size: 0.9em;
+
+	&.primary {
+		border-color: var(--theme--primary);
+		border-width: 2px;
+	}
 }
 
-.keyword-name {
+.chip-keyword {
 	color: var(--theme--foreground);
+	max-width: 150px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.keyword-count {
+.chip-score {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 20px;
-	height: 20px;
+	min-width: 28px;
+	height: 22px;
 	padding: 0 6px;
-	background-color: var(--theme--primary);
-	color: var(--theme--primary-background-color);
-	border-radius: 10px;
-	font-size: 0.8em;
+	border-radius: 11px;
+	font-size: 0.85em;
 	font-weight: 600;
+	color: #fff;
 
-	&.zero {
+	&.success {
+		background-color: var(--theme--success);
+	}
+
+	&.warning {
+		background-color: var(--theme--warning);
+	}
+
+	&.danger {
 		background-color: var(--theme--danger);
 	}
+}
+
+.keywords-analysis {
+	display: flex;
+	flex-direction: column;
 }
 </style>

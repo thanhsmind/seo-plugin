@@ -54,6 +54,7 @@ export interface RuleAnalysisResult {
 	name: string;
 	status: RuleStatus;
 	message: string;
+	keyword?: string;
 }
 
 export interface GroupedRuleResults {
@@ -62,4 +63,18 @@ export interface GroupedRuleResults {
 	results: RuleAnalysisResult[];
 	passCount: number;
 	failCount: number;
+}
+
+export interface KeywordAnalysisResult {
+	keyword: string;
+	isPrimary: boolean;
+	score: number;
+	results: RuleAnalysisResult[];
+	groupedResults: GroupedRuleResults[];
+}
+
+export interface MultiKeywordAnalysisResult {
+	keywords: KeywordAnalysisResult[];
+	overallScore: number;
+	primaryKeyword: string;
 }
