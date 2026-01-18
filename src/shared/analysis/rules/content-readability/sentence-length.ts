@@ -1,4 +1,4 @@
-import type { SeoAnalysisRule } from '../../types';
+import type { RuleResultValue, SeoAnalysisRule } from '../../types';
 import { countWords, extractSentences } from '../../utils';
 
 const MAX_WORDS_PER_SENTENCE = 20;
@@ -31,12 +31,13 @@ export const sentenceLengthRule: SeoAnalysisRule = {
 				percentage,
 				longCount: longSentences.length,
 				total: sentences.length,
+				highlights: longSentences.slice(0, 3).map(s => s.length > 80 ? s.substring(0, 80) + '...' : s),
 			},
 		};
 	},
 	messages: {
 		pass: 'Độ dài câu phù hợp.',
-		fail: (v) => `${v?.percentage?.toFixed(0)}% câu quá dài (>${MAX_WORDS_PER_SENTENCE} từ). Nên dưới ${MAX_LONG_SENTENCE_PERCENTAGE}%.`,
+		fail: (v?: RuleResultValue) => `${v?.percentage?.toFixed(0)}% câu quá dài (>${MAX_WORDS_PER_SENTENCE} từ). Nên dưới ${MAX_LONG_SENTENCE_PERCENTAGE}%.`,
 		skip: 'Không tìm thấy câu trong nội dung.',
 	},
 };

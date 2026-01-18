@@ -129,6 +129,17 @@ const densityMeterStatus = computed((): SeoFieldStatus => {
 					</ul>
 				</div>
 			</div>
+
+			<!-- Highlights / Evidence -->
+			<div v-if="result.details?.highlights?.length" class="analysis-highlights">
+				<p class="highlights-label">Dẫn chứng cụ thể:</p>
+				<ul>
+					<li v-for="(item, index) in result.details.highlights" :key="index">
+						<v-icon name="error_outline" x-small class="highlight-icon" />
+						<span class="highlight-text">{{ item }}</span>
+					</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 </template>
@@ -219,6 +230,48 @@ const densityMeterStatus = computed((): SeoFieldStatus => {
 		width: 100px;
 		margin: 4px 0 0 8px;
 		vertical-align: middle;
+	}
+}
+
+.analysis-highlights {
+	margin-top: 8px;
+	padding: 8px;
+	background-color: var(--theme--background-subdued);
+	border-radius: var(--theme--border-radius);
+	border-left: 3px solid var(--theme--danger);
+
+	.highlights-label {
+		font-size: 0.8rem;
+		font-weight: bold;
+		margin-bottom: 4px;
+		color: var(--theme--foreground);
+	}
+
+	ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	li {
+		font-size: 0.8rem;
+		color: var(--theme--foreground-subdued);
+		display: flex;
+		gap: 4px;
+		align-items: center;
+		margin-bottom: 2px;
+		font-style: italic;
+	}
+
+	.highlight-icon {
+		color: var(--theme--danger);
+		flex-shrink: 0;
+	}
+
+	.highlight-text {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 }
 </style>

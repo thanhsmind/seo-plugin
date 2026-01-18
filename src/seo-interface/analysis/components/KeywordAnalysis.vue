@@ -112,6 +112,16 @@ function getStatusText(passCount: number, failCount: number) {
 							<div class="rule-info">
 								<span class="rule-name">{{ ruleResult.name }}</span>
 								<span class="rule-message">{{ ruleResult.message }}</span>
+								
+								<!-- Highlights / Evidence -->
+								<div v-if="ruleResult.details?.highlights?.length" class="rule-highlights">
+									<ul class="highlights-list">
+										<li v-for="(item, index) in ruleResult.details.highlights" :key="index">
+											<v-icon name="error_outline" x-small class="highlight-icon" />
+											<span class="highlight-text">{{ item }}</span>
+										</li>
+									</ul>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -372,6 +382,41 @@ function getStatusText(passCount: number, failCount: number) {
 	font-size: 0.85em;
 	color: var(--theme--foreground-subdued);
 	line-height: 1.4;
+}
+
+.rule-highlights {
+	margin-top: 6px;
+	padding: 6px 8px;
+	background-color: var(--theme--background-subdued);
+	border-radius: var(--theme--border-radius);
+	border-left: 2px solid var(--theme--danger);
+
+	.highlights-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	li {
+		font-size: 0.8em;
+		color: var(--theme--foreground-subdued);
+		display: flex;
+		gap: 4px;
+		align-items: center;
+		margin-bottom: 2px;
+		font-style: italic;
+	}
+
+	.highlight-icon {
+		color: var(--theme--danger);
+		flex-shrink: 0;
+	}
+
+	.highlight-text {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 }
 
 .no-results {

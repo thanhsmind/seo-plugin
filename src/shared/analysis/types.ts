@@ -26,6 +26,7 @@ export interface RuleResultValue {
 	urlLength?: number;
 	longParagraphs?: number;
 	length?: number;
+	highlights?: string[];
 	[key: string]: unknown;
 }
 
@@ -56,6 +57,7 @@ export interface RuleAnalysisResult {
 	status: RuleStatus;
 	message: string;
 	keyword?: string;
+	details?: RuleResultValue;
 }
 
 export interface GroupedRuleResults {

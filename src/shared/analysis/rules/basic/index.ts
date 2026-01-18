@@ -5,3 +5,4 @@ export { keywordInFirst10PercentRule } from './keyword-in-first-10-percent';
 export { contentLengthRule } from './content-length';
 export { titleLengthRule } from './title-length';
 export { descriptionLengthRule } from './description-length';
+export { keywordInEndRule } from './keyword-in-end';

@@ -39,6 +39,7 @@ export function runRule(rule: SeoAnalysisRule, context: RuleContext): RuleAnalys
 		name: rule.name,
 		status: result.status,
 		message: getMessage(rule, result.status, result.value),
+		details: result.value,
 	};
 }
 

@@ -220,3 +220,157 @@ export function truncate(text: string | undefined | null, maxLength: number): st
 	if (!text) return '';
 	return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
+
+/**
+ * Counts transition words in Vietnamese text
+ */
+export function countTransitionWords(text: string): number {
+	if (!text) return 0;
+	const transitionWords = [
+		'tuy nhiên', 'nhưng', 'vì vậy', 'do đó', 'ngoài ra', 'hơn nữa',
+		'tóm lại', 'ví dụ', 'hơn thế nữa', 'cụ thể là', 'ngược lại', 'đồng thời',
+		'mặc dù', 'cho nên', 'thậm chí', 'đặc biệt là', 'nói cách khác',
+	];
+
+	const normalizedText = text.toLowerCase();
+	let count = 0;
+
+	for (const word of transitionWords) {
+		const regex = new RegExp(`\\b${word}\\b`, 'gi');
+		count += (normalizedText.match(regex) || []).length;
+	}
+
+	return count;
+}
+
+/**
+ * Checks if any heading contains a question (ends with or contains question words)
+ */
+export function hasQuestionInHeadings(content: string): boolean {
+	const subheadings = extractSubheadings(content);
+	const questionWords = ['làm sao', 'tại sao', 'thế nào', 'bao giờ', 'đâu là', 'ai là'];
+
+	return subheadings.some(h => {
+		const text = h.toLowerCase();
+		return text.endsWith('?') || questionWords.some(q => text.includes(q));
+	});
+}
+
+/**
+ * Finds all generic anchor text in HTML or Markdown like "tại đây", "click here"
+ */
+export function findGenericAnchorTexts(html: string): string[] {
+	if (!html) return [];
+	const genericWords = ['tại đây', 'xem thêm', 'click here', 'truy cập', 'đường dẫn', 'link'];
+	const found: string[] = [];
+
+	const linkTextRegex = /<a[^>]*>(.*?)<\/a>/gi;
+	let match;
+
+	while ((match = linkTextRegex.exec(html)) !== null) {
+		const rawText = match[1];
+		if (rawText) {
+			const text = stripHtml(rawText).trim();
+			if (genericWords.includes(text.toLowerCase())) {
+				found.push(text);
+			}
+		}
+	}
+
+	// Support Markdown links [text](url)
+	const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+	while ((match = mdLinkRegex.exec(html)) !== null) {
+		const rawText = match[1];
+		if (rawText) {
+			const text = rawText.trim();
+			if (genericWords.includes(text.toLowerCase())) {
+				found.push(text);
+			}
+		}
+	}
+
+	return found;
+}
+
+/**
+ * Checks if HTML contains generic anchor text
+ */
+export function hasGenericAnchorText(html: string): boolean {
+	return findGenericAnchorTexts(html).length > 0;
+}
+
+/**
+ * Checks if keyword is in the last N% of the text
+ */
+export function isKeywordInSuffix(text: string, keyword: string, percentage: number = 10): boolean {
+	if (!text || !keyword) return false;
+	const lengthToCheck = Math.ceil(text.length * (percentage / 100));
+	const suffix = text.substring(text.length - lengthToCheck).toLowerCase();
+	return suffix.includes(keyword.toLowerCase());
+}
+
+/**
+ * Checks if content contains video elements or embeds
+ */
+export function hasVideoContent(html: string): boolean {
+	if (!html) return false;
+	const videoRegex = /<(video|iframe|embed|object)[^>]*>|youtube\.com|vimeo\.com|youtu\.be/gi;
+	return videoRegex.test(html);
+}
+
+/**
+ * Extracts all image sources from content
+ */
+export function extractImages(content: string): string[] {
+	if (!content) return [];
+	const sources: string[] = [];
+	const imgRegex = /<img[^>]*src=["']([^"']*)["'][^>]*>/gi;
+	let match;
+	while ((match = imgRegex.exec(content)) !== null) {
+		if (match[1]) sources.push(match[1]);
+	}
+	// Markdown images
+	const mdImgRegex = /!\[.*?\]\((.*?)\)/g;
+	while ((match = mdImgRegex.exec(content)) !== null) {
+		if (match[1]) sources.push(match[1]);
+	}
+	return sources;
+}
+
+/**
+ * Extracts all video sources from content
+ */
+export function extractVideos(content: string): string[] {
+	if (!content) return [];
+	const sources: string[] = [];
+	const videoRegex = /<(video|iframe|embed|object)[^>]*src=["']([^"']*)["'][^>]*>/gi;
+	let match;
+	while ((match = videoRegex.exec(content)) !== null) {
+		if (match[2]) sources.push(match[2]);
+	}
+	// Support direct YouTube/Vimeo links in text
+	const videoLinkRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be|vimeo\.com)\/\S+/gi;
+	while ((match = videoLinkRegex.exec(content)) !== null) {
+		sources.push(match[0]);
+	}
+	return sources;
+}
+
+/**
+ * Extracts paragraphs from content
+ */
+export function extractParagraphs(content: string): string[] {
+	if (!content) return [];
+	const cleanContent = stripHtml(content);
+	return cleanContent.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+}
+
+/**
+ * Extracts sentences from content
+ */
+export function extractSentences(content: string): string[] {
+	if (!content) return [];
+	const cleanContent = normalizeContent(content);
+	// Basic sentence splitting for most languages including Vietnamese
+	return cleanContent.split(/[.!?]+\s+/).map(s => s.trim()).filter(s => s.length > 0);
+}

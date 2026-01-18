@@ -78,7 +78,7 @@ const baseContext = computed<Omit<RuleContext, 'focusKeyphrase'>>(() => ({
 	title: props.title,
 	metaDescription: props.description,
 	slug: slugValue.value,
-	content: normalizeContent(contentString.value),
+	content: contentString.value,
 }));
 
 const runAnalysis = useDebounceFn(() => {

@@ -5,6 +5,7 @@ import {
 	contentLengthRule,
 	descriptionLengthRule,
 	keywordInDescriptionRule,
+	keywordInEndRule,
 	keywordInFirst10PercentRule,
 	keywordInTitleRule,
 	keywordInUrlRule,
@@ -24,10 +25,13 @@ import { numberInTitleRule } from './title-readability';
 
 // Content Readability Rules
 import {
+	descriptiveAnchorTextRule,
 	hasMediaRule,
+	questionInHeadingsRule,
 	sentenceLengthRule,
 	shortParagraphsRule,
 	tableOfContentsRule,
+	transitionWordsRule,
 } from './content-readability';
 
 export const basicRules: SeoAnalysisRule[] = [
@@ -37,6 +41,7 @@ export const basicRules: SeoAnalysisRule[] = [
 	descriptionLengthRule,
 	keywordInUrlRule,
 	keywordInFirst10PercentRule,
+	keywordInEndRule,
 	contentLengthRule,
 ];
 
@@ -56,6 +61,9 @@ export const contentReadabilityRules: SeoAnalysisRule[] = [
 	shortParagraphsRule,
 	hasMediaRule,
 	sentenceLengthRule,
+	transitionWordsRule,
+	questionInHeadingsRule,
+	descriptiveAnchorTextRule,
 ];
 
 export const allRules: SeoAnalysisRule[] = [
@@ -86,4 +94,7 @@ export {
 	shortParagraphsRule,
 	hasMediaRule,
 	sentenceLengthRule,
+	transitionWordsRule,
+	questionInHeadingsRule,
+	descriptiveAnchorTextRule,
 };

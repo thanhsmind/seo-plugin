@@ -1,5 +1,4 @@
 import type { SeoAnalysisRule } from '../../types';
-import { normalize } from '../../utils';
 import { extractImageAltText } from '../../../utils';
 
 export const keywordInImageAltRule: SeoAnalysisRule = {
@@ -20,11 +19,15 @@ export const keywordInImageAltRule: SeoAnalysisRule = {
 			return { status: 'skip', value: { skipped: true } };
 		}
 
-		const hasKeyphrase = altTexts.some(alt =>
-			normalize(alt).includes(normalize(focusKeyphrase)),
+		const normalizedKeyword = focusKeyphrase.toLowerCase();
+		const matchingAlts = altTexts.filter((alt: string) =>
+			alt.toLowerCase().includes(normalizedKeyword),
 		);
 
-		return { status: hasKeyphrase ? 'pass' : 'fail' };
+		return {
+			status: matchingAlts.length > 0 ? 'pass' : 'fail',
+			value: { highlights: altTexts },
+		};
 	},
 	messages: {
 		pass: 'Đã tìm thấy từ khóa chính trong alt của hình ảnh.',

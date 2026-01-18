@@ -99,32 +99,31 @@ export function extractHeadings(content: string): { level: number; text: string 
 export function extractParagraphs(content: string): string[] {
 	if (!content) return [];
 
-	const paragraphs: string[] = [];
+	// If it's HTML, we want to split by block-level elements
+	if (content.includes('<') && content.includes('>')) {
+		// Replace common block tags with a marker for splitting
+		const blockTags = ['p', 'div', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+		let tempContent = content;
 
-	// HTML paragraphs
-	const htmlParagraphRegex = /<p[^>]*>(.*?)<\/p>/gis;
-	let match: RegExpExecArray | null;
-
-	while ((match = htmlParagraphRegex.exec(content)) !== null) {
-		const text = stripHtml(match[1] || '').trim();
-		if (text) {
-			paragraphs.push(text);
+		for (const tag of blockTags) {
+			const regex = new RegExp(`<${tag}[^>]*>(.*?)<\/${tag}>`, 'gis');
+			tempContent = tempContent.replace(regex, (_, p1) => `\n\n${p1}\n\n`);
 		}
+
+		const blocks = stripHtml(tempContent)
+			.split(/\n\s*\n/)
+			.map(p => p.trim())
+			.filter(Boolean);
+
+		return blocks;
 	}
 
-	// If no HTML paragraphs found, split by double newlines (Markdown style)
-	if (paragraphs.length === 0) {
-		const clean = stripHtml(content);
-		const blocks = clean.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-		// Filter out headings
-		for (const block of blocks) {
-			if (!block.startsWith('#')) {
-				paragraphs.push(block);
-			}
-		}
-	}
+	// Markdown or plain text
+	const clean = stripHtml(content);
+	const blocks = clean.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
 
-	return paragraphs;
+	// Filter out headings for Markdown
+	return blocks.filter(block => !block.startsWith('#'));
 }
 
 /**
@@ -256,4 +255,119 @@ export function calculateKeywordDensity(text: string, keyword: string): { densit
 	const density = (occurrences * keywordWords / wordCount) * 100;
 
 	return { density, occurrences };
+}
+
+/**
+ * Finds transition words in Vietnamese text
+ */
+export function findTransitionWords(text: string): string[] {
+	if (!text) return [];
+	const transitionWords = [
+		'tuy nhiên', 'nhưng', 'vì vậy', 'do đó', 'ngoài ra', 'hơn nữa',
+		'tóm lại', 'ví dụ', 'hơn thế nữa', 'cụ thể là', 'ngược lại', 'đồng thời',
+		'mặc dù', 'cho nên', 'thậm chí', 'đặc biệt là', 'nói cách khác',
+		'tuy vậy', 'tuy thế', 'tổng kết lại', 'thêm vào đó', 'kết luận là',
+		'mặt khác', 'bên cạnh đó', 'về cơ bản', 'nói tóm lại'
+	];
+
+	const normalizedText = text.toLowerCase();
+	const found: string[] = [];
+
+	for (const word of transitionWords) {
+		const regex = new RegExp(`\\b${word}\\b`, 'gi');
+		const matches = normalizedText.match(regex);
+		if (matches) {
+			found.push(...matches);
+		}
+	}
+
+	return found;
+}
+
+/**
+ * Counts transition words in Vietnamese text
+ */
+export function countTransitionWords(text: string): number {
+	return findTransitionWords(text).length;
+}
+
+/**
+ * Checks if any heading contains a question (ends with or contains question words)
+ */
+export function hasQuestionInHeadings(content: string): boolean {
+	const headings = extractHeadings(content);
+	const questionWords = [
+		'làm sao', 'tại sao', 'thế nào', 'bao giờ', 'đâu là', 'ai là',
+		'đâu', 'nào', 'mấy', 'bao nhiêu', 'ai', 'gì', 'chưa', 'không'
+	];
+
+	return headings.some(h => {
+		const text = h.text.toLowerCase();
+		// Look for '?' or question words at the end or as isolated words
+		const hasQuestionWord = questionWords.some(q => {
+			const regex = new RegExp(`\\b${q}\\b`, 'gi');
+			return regex.test(text);
+		});
+		return text.endsWith('?') || hasQuestionWord;
+	});
+}
+
+/**
+ * Finds all generic anchor text in HTML or Markdown like "tại đây", "click here"
+ */
+export function findGenericAnchorTexts(html: string): string[] {
+	if (!html) return [];
+	const genericWords = ['tại đây', 'xem thêm', 'click here', 'truy cập', 'đường dẫn', 'link'];
+	const found: string[] = [];
+
+	const linkTextRegex = /<a[^>]*>(.*?)<\/a>/gi;
+	let match;
+
+	while ((match = linkTextRegex.exec(html)) !== null) {
+		const rawText = match[1];
+		if (rawText) {
+			const text = stripHtml(rawText).trim();
+			if (genericWords.includes(text.toLowerCase())) {
+				found.push(text);
+			}
+		}
+	}
+
+	// Support Markdown links [text](url)
+	const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+	while ((match = mdLinkRegex.exec(html)) !== null) {
+		const rawText = match[1];
+		if (rawText) {
+			const text = rawText.trim();
+			if (genericWords.includes(text.toLowerCase())) {
+				found.push(text);
+			}
+		}
+	}
+
+	return found;
+}
+
+/**
+ * Checks if HTML contains generic anchor text
+ */
+export function hasGenericAnchorText(html: string): boolean {
+	return findGenericAnchorTexts(html).length > 0;
+}
+
+/**
+ * Checks if keyword is in the last N% of the text
+ */
+export function isKeywordInSuffix(text: string, keyword: string, percentage: number = 10): boolean {
+	if (!text || !keyword) return false;
+	const lengthToCheck = Math.ceil(text.length * (percentage / 100));
+	const suffix = text.substring(text.length - lengthToCheck).toLowerCase();
+	return suffix.includes(keyword.toLowerCase());
+}
+
+/**
+ * Checks if content contains video elements or embeds
+ */
+export function hasVideoContent(html: string): boolean {
+	return extractVideos(html).length > 0;
 }

@@ -7,9 +7,9 @@ Tài liệu này tổng hợp toàn bộ các quy tắc SEO mà hệ thống đa
 ## 1. Từ khóa trọng tâm (Focus Keyphrase)
 Đây là cụm từ quan trọng nhất. Toàn bộ các quy tắc dưới đây đều xoay quanh việc tối ưu từ khóa này.
 
-- **Sử dụng từ khóa:** Đảm bảo từ khóa xuất hiện tự nhiên xuyên suốt bài viết.
+- **Xác định từ khóa:** Đảm bảo từ khóa xuất hiện tự nhiên xuyên suốt bài viết.
 - **Mật độ từ khóa:** Nên nằm trong khoảng **0.5% - 2.5%**. (Ví dụ: Bài 1000 từ nên có từ khóa 5-25 lần).
-- **Phần mở đầu:** Từ khóa chính **phải** xuất hiện trong **10% nội dung đầu tiên** của bài viết.
+- **Phần mở đầu & Kết thúc:** Từ khóa chính nên xuất hiện trong **10% nội dung đầu tiên** (Mở bài) và nhắc lại ở **10% nội dung cuối cùng** (Kết luận).
 
 ---
 
@@ -36,19 +36,24 @@ Tiêu đề là thứ đầu tiên người dùng nhìn thấy trên Google.
 
 ---
 
-## 5. Cấu trúc nội dung & Hình ảnh
-Một bài viết có cấu trúc tốt sẽ giúp người dùng ở lại lâu hơn.
+## 5. Cấu trúc nội dung & Khả năng đọc
+Một bài viết có cấu trúc tốt sẽ giúp người dùng ở lại lâu hơn và Google đánh giá cao hơn.
 
-- **Tiêu đề phụ (H2-H6):** Hãy chia nhỏ bài viết bằng các tiêu đề phụ và đưa từ khóa vào ít nhất một tiêu đề phụ.
-- **Hình ảnh:** Mỗi bài viết nên có ít nhất 1-3 ảnh. Đảm bảo thẻ **Alt** (văn bản thay thế) của hình ảnh có chứa từ khóa.
-- **Độ dài đoạn văn:** Tránh viết các đoạn văn quá dài (trên 120 từ). Hãy chia nhỏ nội dung để người dùng dễ theo dõi trên điện thoại.
-- **Mục lục (Table of Contents):** Với bài viết dài trên 1000 từ, bạn nên có một phần Mục lục ở đầu bài.
+- **Tiêu đề phụ (H2-H6):** 
+    - Hãy chia nhỏ bài viết bằng các tiêu đề phụ và đưa từ khóa vào ít nhất một tiêu đề phụ.
+    - **Mẹo nâng cao:** Sử dụng ít nhất một câu hỏi trong tiêu đề phụ (Ví dụ: *"Làm thế nào để...?"*) để có cơ hội lọt vào "Top 0" của Google.
+- **Sử dụng từ nối:** Hãy sử dụng các từ như *"Tuy nhiên", "Vì vậy", "Ngoài ra", "Hơn nữa"*... để bài viết lưu loát, dễ đọc.
+- **Hình ảnh & Video:** 
+    - Mỗi bài viết nên có ít nhất 1-3 ảnh. Đảm bảo thẻ **Alt** có chứa từ khóa.
+    - Khuyến khích chèn thêm Video (Youtube/Vimeo) để tăng mức độ phong phú cho nội dung.
+- **Độ dài đoạn văn:** Tránh viết các đoạn văn quá dài (trên 120 từ). Hãy chia nhỏ nội dung.
 
 ---
 
 ## 6. Liên kết (Links)
-- **Liên kết nội bộ (Internal Links):** Dẫn link tới các bài viết khác trên cùng website của mình.
-- **Liên kết ngoài (External Links):** Dẫn link tới các nguồn uy tín khác (Wikipedia, báo lớn,...) để tăng độ tin cậy cho bài viết.
+- **Liên kết nội bộ (Internal Links):** Dẫn link tới các bài viết khác trên website.
+- **Liên kết ngoài (External Links):** Dẫn link tới các nguồn uy tín khác.
+- **Văn bản hiển thị link (Anchor Text):** Tránh dùng các từ vô nghĩa như *"tại đây", "xem thêm"*. Hãy dùng các cụm từ mô tả rõ nội dung bạn đang trỏ tới (Ví dụ: *"hướng dẫn tối ưu SEO"*).
 
 ---
 
