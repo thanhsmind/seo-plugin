@@ -1,0 +1,73 @@
+seo:
+  fields:
+    title: Tiêu đề
+    meta_description: Mô tả Meta
+    og_image: Ảnh mạng xã hội
+    sitemap: Sơ đồ trang web
+    translations: Bản dịch
+    additional_fields: Các trường bổ sung
+    no_index: Không lập chỉ mục (No Index)
+    no_follow: Không theo dõi (No Follow)
+    change_frequency: Tần suất thay đổi
+    priority: Độ ưu tiên
+
+  status:
+    ideal: Lý tưởng
+    too_short: Quá ngắn
+    too_long: Quá dài
+    missing: Cực thiếu
+    optional: Tùy chọn
+    required: Bắt buộc
+    hidden: Ẩn khỏi công cụ tìm kiếm
+    links_not_followed: Không theo dõi liên kết
+
+  interface:
+    seo_status: Trạng thái SEO
+    search_preview: Xem trước tìm kiếm
+    sitemap_settings: Cấu hình Sơ đồ trang web
+    search_controls: Kiểm soát bộ máy tìm kiếm
+    character_recommendation: 'Khuyến nghị {min}-{max} ký tự'
+    current_length: 'Hiện tại: {length}'
+    generate_from_template: Tạo từ mẫu
+    no_image_selected: Chưa chọn ảnh
+    unsupported_media: Loại phương tiện không hỗ trợ
+    image_metadata: '{width}x{height} • {filesize} • {type}'
+    hidden_from_search: Trang này sẽ bị ẩn khỏi các công cụ tìm kiếm
+    links_not_followed_warning: Các liên kết trên trang này sẽ không được theo dõi
+    hidden_and_not_followed: Trang này sẽ bị ẩn và các liên kết sẽ không được theo dõi
+
+  actions:
+    download: Tải về
+    edit_item: Chỉnh sửa
+    deselect: Bỏ chọn
+    zoom: Thu phóng
+    reload_required: Yêu cầu tải lại trang
+
+  tooltips:
+    seo_status: Kiểm tra nhanh nếu SEO của bạn đã được tối ưu
+    sitemap_settings: Kiểm soát cách bộ máy tìm kiếm thu thập thông tin và lập chỉ mục
+    search_controls: Kiểm soát cách bộ máy tìm kiếm tương tác với trang này
+    change_frequency: Tần suất nội dung có khả năng thay đổi
+    priority: Độ ưu tiên của URL này so với các trang khác
+    no_index: Ngăn bộ máy tìm kiếm lập chỉ mục trang này
+    no_follow: Ngăn bộ máy tìm kiếm theo dõi các liên kết trên trang này
+
+  placeholders:
+    enter_title: Nhập tiêu đề SEO
+    enter_description: Nhập mô tả meta
+    select_frequency: Chọn tần suất thay đổi
+    select_priority: Chọn độ ưu tiên
+
+  validation:
+    title_required: Tiêu đề là bắt buộc
+    description_required: Mô tả meta là bắt buộc
+    template_error: Lỗi hiển thị mẫu
+    field_required: '{field} là bắt buộc'
+    invalid_dimensions: Kích thước ảnh không hợp lệ
+    invalid_file_type: Loại tệp không hợp lệ
+
+  preview:
+    search_result_preview: Xem trước kết quả tìm kiếm
+    social_media_preview: Xem trước trên mạng xã hội
+    additional_fields_status: 'Đã điền {filled} trên {total} trường'
+    missing_required_fields: 'Thiếu {count} trường bắt buộc'
