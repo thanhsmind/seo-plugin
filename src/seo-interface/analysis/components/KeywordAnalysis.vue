@@ -14,7 +14,7 @@ const props = defineProps<{
 	isExpanded?: boolean;
 }>();
 
-const openGroups = ref<RuleGroup[]>(props.result.isPrimary ? ['basic', 'additional'] : []);
+const openGroups = ref<RuleGroup[]>(props.result.isPrimary ? ['basic', 'additional', 'title-readability', 'content-readability'] : []);
 
 const scoreColor = computed(() => {
 	if (props.result.score >= 80) return 'success';
@@ -35,7 +35,9 @@ function getGroupColorClass(group: string) {
 }
 
 function getStatusIcon(status: string) {
-	return status === 'pass' ? 'check_circle' : 'cancel';
+	if (status === 'pass') return 'check_circle';
+	if (status === 'fail') return 'cancel';
+	return 'help_outline';
 }
 
 function getStatusClass(failCount: number) {
@@ -362,6 +364,10 @@ function getStatusText(passCount: number, failCount: number) {
 
 		&.fail {
 			--v-icon-color: var(--theme--danger);
+		}
+
+		&.skip {
+			--v-icon-color: var(--theme--foreground-subdued);
 		}
 	}
 }

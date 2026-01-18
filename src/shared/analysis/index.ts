@@ -51,7 +51,7 @@ export function groupRuleResults(results: RuleAnalysisResult[]): GroupedRuleResu
 	const grouped: GroupedRuleResults[] = [];
 
 	for (const group of GROUP_ORDER) {
-		const groupResults = results.filter(r => r.group === group && r.status !== 'skip');
+		const groupResults = results.filter(r => r.group === group);
 
 		if (groupResults.length === 0) continue;
 
