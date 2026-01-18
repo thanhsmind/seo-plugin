@@ -69,6 +69,8 @@ onKeyStroke('Enter', (e) => {
 			</div>
 			<div class="hint">
 				The main phrase you want this content to rank for in search engines.
+				<br>
+				<span class="hint-secondary">Phân cách nhiều từ khóa bằng dấu phẩy. Từ khóa đầu tiên là từ khóa chính.</span>
 			</div>
 		</div>
 	</div>
@@ -95,6 +97,11 @@ onKeyStroke('Enter', (e) => {
 	margin-top: 4px;
 	font-size: 0.8rem;
 	color: var(--theme--foreground-subdued);
+}
+
+.hint-secondary {
+	opacity: 0.8;
+	font-style: italic;
 }
 
 .keyphrase-display {
