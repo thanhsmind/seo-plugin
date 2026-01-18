@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { getRootPath } from '@directus-labs/utils';
 import { useApi } from '@directus/extensions-sdk';
 import { computed, ref, watch } from 'vue';
 
 import { useI18n } from 'vue-i18n';
+
+function getRootPath(): string {
+	const path = window.location.pathname;
+	const adminIndex = path.indexOf('/admin');
+	if (adminIndex !== -1) {
+		return path.substring(0, adminIndex + 1);
+	}
+	return '/';
+}
 
 interface Image {
 	id: string;

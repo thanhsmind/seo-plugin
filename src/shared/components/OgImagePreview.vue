@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { getRootPath } from '@directus-labs/utils';
 import { RadioGroupIndicator, RadioGroupItem, RadioGroupRoot } from 'reka-ui';
 import { computed, defineProps, ref } from 'vue';
 import { truncate } from '../utils';
+
+function getRootPath(): string {
+	const path = window.location.pathname;
+	const adminIndex = path.indexOf('/admin');
+	if (adminIndex !== -1) {
+		return path.substring(0, adminIndex + 1);
+	}
+	return '/';
+}
 
 const props = defineProps<{
 	title: string;
